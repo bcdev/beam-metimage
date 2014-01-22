@@ -17,6 +17,38 @@ public class DistinctionSkillTest {
     }
 
     @Test
+    public void testCalcDistinctionSkillHistogramsUnequalLength() {
+        final double[] histoNoCloud = new double[]{1.0, 2.0, 3.0};
+        final double[] histoCloud = new double[]{1.0, 2.0, 3.0, 4.0};
+        final double[] histoBins = new double[]{0.1, 0.2, 0.3, 0.4};
+
+        try {
+            final double skill =
+                    DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(histoNoCloud, histoCloud, histoBins,
+                                                                                          numNoCloud, numCloud);
+        } catch (Exception e) {
+            assertEquals(IllegalArgumentException.class, e.getClass());
+            assertEquals("Histograms have unequal length - cannot proceed.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCalcDistinctionSkillBinHistogramWrongLength() {
+        final double[] histoNoCloud = new double[]{2.0, 3.0, 4.0, 5.0};
+        final double[] histoCloud = new double[]{1.0, 2.0, 3.0, 4.0};
+        final double[] histoBins = new double[]{0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
+
+        try {
+            final double skill =
+                    DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(histoNoCloud, histoCloud, histoBins,
+                                                                                          numNoCloud, numCloud);
+        } catch (Exception e) {
+            assertEquals(IllegalArgumentException.class, e.getClass());
+            assertEquals("Number of histogram bins does not match - cannot proceed.", e.getMessage());
+        }
+    }
+
+    @Test
     public void testCalcDistinctionSkillReflectance() {
         // test data taken from RP's 'meris_cloud_naive_bayes_all_data_ndvi.npz'
 
@@ -37,7 +69,6 @@ public class DistinctionSkillTest {
                 1.32737846e-01, 1.17874413e-01, 1.26495026e-01, 8.54580591e-02};
 
         // the borders of the bins:
-        // todo: clarify with RP how these are determined or should be set in advance
         final double[] histoBins = new double[]{
                 0.02550527, 0.03044264, 0.03538002, 0.0403174,
                 0.04525477, 0.05019215, 0.05512953, 0.0600669,
@@ -47,11 +78,11 @@ public class DistinctionSkillTest {
                 0.53685361};
 
         final double skill =
-                DistinctionSkill.computeCramerMisesAndersonMetric(histoNoCloud, histoCloud, histoBins,
-                        numNoCloud, numCloud);
+                DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(histoNoCloud, histoCloud, histoBins,
+                                                                                      numNoCloud, numCloud);
 
         final double expected = 0.857929;
-//        assertEquals(expected, skill, 1.E-5);
+        assertEquals(expected, skill, 1.E-5);
     }
 
     @Test
@@ -75,7 +106,6 @@ public class DistinctionSkillTest {
                 5.38788305e-03, 8.90559182e-06, 8.90559182e-06, 8.90559182e-06};
 
         // the borders of the bins:
-        // todo: clarify with RP how these are determined or should be set in advance
         final double[] histoBins = new double[]{
                 -0.56842989, -0.22005687, -0.13986412, -0.08003084,
                 -0.06748618, -0.05494151, -0.04239684, -0.02985217,
@@ -85,11 +115,11 @@ public class DistinctionSkillTest {
                 0.64510043};
 
         final double skill =
-                DistinctionSkill.computeCramerMisesAndersonMetric(histoNoCloud, histoCloud, histoBins,
-                        numNoCloud, numCloud);
+                DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(histoNoCloud, histoCloud, histoBins,
+                                                                                      numNoCloud, numCloud);
 
         final double expected = 0.160655;
-//        assertEquals(expected, skill, 1.E-5);
+        assertEquals(expected, skill, 1.E-5);
     }
 
 
