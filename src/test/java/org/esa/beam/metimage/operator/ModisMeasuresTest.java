@@ -14,8 +14,6 @@ public class ModisMeasuresTest {
 
     @Test
     public void testModisMeasures() {
-        assertTrue(true);
-
         double rho600 = 0.1;
         double rho860 = 0.15;
         double rho1380 = 0.25;
