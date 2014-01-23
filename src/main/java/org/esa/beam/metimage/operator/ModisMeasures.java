@@ -22,12 +22,32 @@ public class ModisMeasures {
     private double bt11Sample3x3;
     private double diffBt11Bt37Sample3x3;
 
+    public ModisMeasures(boolean isLand, boolean isNight,
+                         double rho600, double rho860, double rho1380, double bt3700,
+                         double bt7300, double bt8600, double bt11000, double bt12000,
+                         double tSkin, double bt11Sample3x3, double diffBt11Bt37Sample3x3) {
+        this.isLand = isLand;
+        this.isNight = isNight;
+        this.rho600 = rho600;
+        this.rho860 = rho860;
+        this.rho1380 = rho1380;
+        this.bt3700 = bt3700;
+        this.bt7300 = bt7300;
+        this.bt8600 = bt8600;
+        this.bt11000 = bt11000;
+        this.bt12000 = bt12000;
+        this.tSkin = tSkin;
+        this.bt11Sample3x3 = bt11Sample3x3;
+        this.diffBt11Bt37Sample3x3 = diffBt11Bt37Sample3x3;
+    }
 
-    /*** heritage tests ***/
+    /**
+     * heritage tests **
+     */
 
     public double heritageMeasureBT11() {
         // heritage 1/7
-        return bt11000 - tSkin;
+        return convertToBrightnessTemperature(bt11000) - tSkin;
     }
 
     public double heritageMeasureSplitWindow() {
@@ -74,7 +94,9 @@ public class ModisMeasures {
     }
 
 
-    /*** new tests ***/
+    /**
+     * new tests **
+     */
 
     public double newMeasureR138WaterVapour() {
         // new 1/7
@@ -122,62 +144,9 @@ public class ModisMeasures {
     }
 
 
-    /**
-     * setters **
-     */
-
-    public void setIsLand(boolean isLand) {
-        this.isLand = isLand;
+    private double convertToBrightnessTemperature(double emissiveValue) {
+        return 288.0; // todo implement
     }
-
-    public void setIsNight(boolean isNight) {
-        this.isNight = isNight;
-    }
-
-    public void setBt11000(double bt11000) {
-        this.bt11000 = bt11000;
-    }
-
-    public void setBt12000(double bt12000) {
-        this.bt12000 = bt12000;
-    }
-
-    public void setBt3700(double bt3700) {
-        this.bt3700 = bt3700;
-    }
-
-    public void setBt7300(double bt7300) {
-        this.bt7300 = bt7300;
-    }
-
-    public void setBt8600(double bt8600) {
-        this.bt8600 = bt8600;
-    }
-
-    public void setTSkin(double tSkin) {
-        this.tSkin = tSkin;
-    }
-
-    public void setRho860(double rho860) {
-        this.rho860 = rho860;
-    }
-
-    public void setRho600(double rho600) {
-        this.rho600 = rho600;
-    }
-
-    public void setBt11Sample3x3(double bt11Sample3x3) {
-        this.bt11Sample3x3 = bt11Sample3x3;
-    }
-
-    public void setRho1380(double rho1380) {
-        this.rho1380 = rho1380;
-    }
-
-    public void setDiffBt11Bt37Sample3x3(double diffBt11Bt37Sample3x3) {
-        this.diffBt11Bt37Sample3x3 = diffBt11Bt37Sample3x3;
-    }
-
 
     private static double combine(double A, double B) {
         return A * B; // todo: define this measure
