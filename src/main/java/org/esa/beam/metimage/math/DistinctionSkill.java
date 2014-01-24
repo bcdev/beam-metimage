@@ -11,6 +11,16 @@ import org.esa.beam.metimage.MetImageConstants;
  */
 public class DistinctionSkill {
 
+    public static double computeDistinctionSkillFromCramerMisesAndersonMetric(MetImageHistogram noCloudHisto,
+                                                                              MetImageHistogram cloudHisto,
+                                                                              int numA, int numB) {
+        final double[] pdfA = getAsDoubles(noCloudHisto.getPdf());
+        final double[] pdfB = getAsDoubles(cloudHisto.getPdf());
+        final double[] bins = getAsDoubles(noCloudHisto.getBinBorders());
+        return computeDistinctionSkillFromCramerMisesAndersonMetric(pdfA, pdfB, bins, numA, numB);
+    }
+
+
     /**
      * Computes the distinction skill based on Cramer-v.Mises-Anderson Metric following R.Preusker, FUB
      * (Python implementation: MI_tools.py)
@@ -86,6 +96,15 @@ public class DistinctionSkill {
         }
 
         return 3.0 * trapezIntegration(distances, fCdfab, quantiles);
+    }
+
+
+    private static double[] getAsDoubles(float[] fArr) {
+        double[] dArr = new double[fArr.length];
+        for (int i = 0; i < dArr.length; i++) {
+            dArr[i] = (double) fArr[i];
+        }
+        return dArr;
     }
 
     private static void getCumulativeSumAndNormalize(double[] pdf, double[] cdf, int nCdf) {
