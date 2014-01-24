@@ -22,6 +22,9 @@ public class ModisMeasures {
     private double bt11Sample3x3;
     private double diffBt11Bt37Sample3x3;
 
+    public ModisMeasures() {
+    }
+
     public ModisMeasures(boolean isLand, boolean isNight,
                          double rho600, double rho860, double rho1380, double bt3700,
                          double bt7300, double bt8600, double bt11000, double bt12000,
@@ -45,18 +48,31 @@ public class ModisMeasures {
      * heritage tests **
      */
 
+    // heritage 1/7
     public double heritageMeasureBT11() {
-        // heritage 1/7
+        return convertToBrightnessTemperature(bt11000) - tSkin;
+    }
+    public static double heritageMeasureBT11(double bt11000, double tSkin) {
         return convertToBrightnessTemperature(bt11000) - tSkin;
     }
 
+    // heritage 2/7
     public double heritageMeasureSplitWindow() {
-        // heritage 2/7
+        return bt11000 - bt12000;
+    }
+    public static double heritageMeasureSplitWindow(double bt11000, double bt12000) {
         return bt11000 - bt12000;
     }
 
+    // heritage 3/7
     public double heritageMeasureNegativeBT37minusBT11Night() {
-        // heritage 3/7
+        if (isNight) {
+            return bt3700 - bt11000;
+        } else {
+            return Double.NaN;
+        }
+    }
+    public static double heritageMeasureNegativeBT37minusBT11Night(double bt3700, double bt11000, boolean isNight) {
         if (isNight) {
             return bt3700 - bt11000;
         } else {
@@ -64,14 +80,24 @@ public class ModisMeasures {
         }
     }
 
+    // heritage 4/7
+    // same as 3/7, but use as 'broken cloud' criterion
     public double heritageMeasurePositiveBT37minusBT11NightMixedScene() {
-        // heritage 4/7
-        // same as 3/7, but use as 'broken cloud' criterion
         return heritageMeasureNegativeBT37minusBT11Night();
     }
+    public static double heritageMeasurePositiveBT37minusBT11NightMixedScene(double bt3700, double bt11000, boolean isNight) {
+        return heritageMeasureNegativeBT37minusBT11Night(bt3700, bt11000, isNight);
+    }
 
+    // heritage 5/7
     public double heritageMeasureSolarBrightnessThresholdsOcean() {
-        // heritage 5/7
+        if (isLand) {
+            return Double.NaN;
+        } else {
+            return rho860;
+        }
+    }
+    public static double heritageMeasureSolarBrightnessThresholdsOcean(double rho860, boolean isLand) {
         if (isLand) {
             return Double.NaN;
         } else {
@@ -79,8 +105,15 @@ public class ModisMeasures {
         }
     }
 
+    // heritage 6/7
     public double heritageMeasureSolarBrightnessThresholdsLand() {
-        // heritage 6/7
+        if (isLand) {
+            return rho600;
+        } else {
+            return Double.NaN;
+        }
+    }
+    public static double heritageMeasureSolarBrightnessThresholdsLand(double rho600, boolean isLand) {
         if (isLand) {
             return rho600;
         } else {
@@ -88,8 +121,11 @@ public class ModisMeasures {
         }
     }
 
+    // heritage 7/7
     public double heritageMeasureUniformity() {
-        // heritage 7/7
+        return bt11Sample3x3;
+    }
+    public static double heritageMeasureUniformity(double bt11Sample3x3) {
         return bt11Sample3x3;
     }
 
@@ -98,13 +134,23 @@ public class ModisMeasures {
      * new tests **
      */
 
+    // new 1/7
     public double newMeasureR138WaterVapour() {
-        // new 1/7
+        return rho1380;
+    }
+    public static double newMeasureR138WaterVapour(double rho1380) {
         return rho1380;
     }
 
+    // new 2/7
     public double newMeasureBT11() {
-        // new 2/7
+        if (isLand) {
+            return bt7300 - bt8600;
+        } else {
+            return bt7300 - bt11000;
+        }
+    }
+    public static double newMeasureBT11(double bt7300, double bt8600, double bt11000, boolean isLand) {
         if (isLand) {
             return bt7300 - bt8600;
         } else {
@@ -112,30 +158,46 @@ public class ModisMeasures {
         }
     }
 
-    public double newMeasureCO2() {
-        // new 3/7
-        // cannot be implemented within this project!!
+    // new 3/7
+    // cannot be implemented within this project!!
+    public static double newMeasureCO2() {
         return Double.NaN;
     }
 
+    // new 4/7
     public double newMeasureBT37minusBT87Deserts() {
-        // new 4/7
+        return bt3700 - bt8600;
+    }
+    public static double newMeasureBT37minusBT87Deserts(double bt3700, double bt8600) {
         return bt3700 - bt8600;
     }
 
+    // new 5/7
     public double newMeasurePositiveBT37minusBT11Day06Glint() {
-        // new 5/7
+        return (bt3700 - bt11000) / rho600;
+    }
+    public static double newMeasurePositiveBT37minusBT11Day06Glint(double bt3700, double bt11000, double rho600) {
         return (bt3700 - bt11000) / rho600;
     }
 
+    // new 6/7
+    // todo: take Idepix scaling height
     public double newMeasureO2Absorption() {
-        // new 6/7
-        // todo: take Idepix scaling height
         return 0.0;
     }
+    public static double newMeasureO2Absorption(double scalingHeight) {
+        return scalingHeight;
+    }
 
+    // new 7/7
     public double newMeasureUniformityTwoChannels() {
-        // new 7/7
+        if (isNight) {
+            return combine(bt11Sample3x3, diffBt11Bt37Sample3x3);
+        } else {
+            return combine(bt11Sample3x3, rho600);
+        }
+    }
+    public static double newMeasureUniformityTwoChannels(double bt11Sample3x3, double diffBt11Bt37Sample3x3, double rho600, boolean isNight) {
         if (isNight) {
             return combine(bt11Sample3x3, diffBt11Bt37Sample3x3);
         } else {
@@ -144,7 +206,7 @@ public class ModisMeasures {
     }
 
 
-    private double convertToBrightnessTemperature(double emissiveValue) {
+    private static double convertToBrightnessTemperature(double emissiveValue) {
         return 288.0; // todo implement
     }
 

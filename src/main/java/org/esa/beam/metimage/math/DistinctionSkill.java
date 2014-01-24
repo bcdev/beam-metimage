@@ -3,6 +3,7 @@ package org.esa.beam.metimage.math;
 import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.esa.beam.metimage.MetImageConstants;
+import util.MetImageUtils;
 
 /**
  * Class providing the distinction skill computation as proposed by R.Preusker, FUB
@@ -14,9 +15,9 @@ public class DistinctionSkill {
     public static double computeDistinctionSkillFromCramerMisesAndersonMetric(MetImageHistogram noCloudHisto,
                                                                               MetImageHistogram cloudHisto,
                                                                               int numA, int numB) {
-        final double[] pdfA = getAsDoubles(noCloudHisto.getPdf());
-        final double[] pdfB = getAsDoubles(cloudHisto.getPdf());
-        final double[] bins = getAsDoubles(noCloudHisto.getBinBorders());
+        final double[] pdfA = MetImageUtils.getAsDoubles(noCloudHisto.getPdf());
+        final double[] pdfB = MetImageUtils.getAsDoubles(cloudHisto.getPdf());
+        final double[] bins = MetImageUtils.getAsDoubles(noCloudHisto.getBinBorders());
         return computeDistinctionSkillFromCramerMisesAndersonMetric(pdfA, pdfB, bins, numA, numB);
     }
 
@@ -98,30 +99,11 @@ public class DistinctionSkill {
         return 3.0 * trapezIntegration(distances, fCdfab, quantiles);
     }
 
-
-    private static double[] getAsDoubles(float[] fArr) {
-        double[] dArr = new double[fArr.length];
-        for (int i = 0; i < dArr.length; i++) {
-            dArr[i] = (double) fArr[i];
-        }
-        return dArr;
-    }
-
     private static void getCumulativeSumAndNormalize(double[] pdf, double[] cdf, int nCdf) {
-        cdf[nCdf-1] = getCumulativeSum(pdf, 0, nCdf-1);
+        cdf[nCdf-1] = MetImageUtils.getCumulativeSum(pdf, 0, nCdf - 1);
         for (int i=0; i<nCdf; i++) {
-            cdf[i] = getCumulativeSum(pdf, 0, i) / cdf[nCdf-1];
+            cdf[i] = MetImageUtils.getCumulativeSum(pdf, 0, i) / cdf[nCdf-1];
         }
-    }
-
-    private static double getCumulativeSum(double[] array, int startIndex, int endIndex) {
-        double sum = 0.0;
-        final int start = Math.max(0, startIndex);
-        final int end = Math.min(array.length, endIndex);
-        for (int i = start; i < end; i++) {
-            sum += array[i];
-        }
-        return sum;
     }
 
     private static double[] getCdfAb(double[] cdfa, double[] cdfb, int numCloud, int numNoCloud) {
