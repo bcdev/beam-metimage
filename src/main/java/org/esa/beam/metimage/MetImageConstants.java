@@ -13,7 +13,7 @@ public class MetImageConstants {
     public static final int ALPHA = 1;
 
     public static final String MODIS_CSV_PRODUCT_CLOUD_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
-    public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME";
+    public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
 
     public static final String MODIS_CSV_PRODUCT_RHO600_BAND_NAME = "EV_1KM_RefSB_13lo";
     public static final String MODIS_CSV_PRODUCT_RHO860_BAND_NAME = "EV_1KM_RefSB_16";
