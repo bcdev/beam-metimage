@@ -20,14 +20,15 @@ public class ModisMeasuresTest {
         double bt3700 = 0.75;
         double bt7300 = 3.0;
         double bt8600 = 9.0;
-        double bt11000 = 12.0;
+        double bt11000 = 4.405360;
         double bt12000 = 15.0;
-        double tSkin = 288.0;
+        double tSkin = 284.98;
         double bt11Sample3x3 = 12.0;
         double diffBt11Bt37Sample3x3 = 9.0;
 
         // at night, over land:
-        assertEquals(0.0, ModisMeasures.heritageMeasureBT11(bt11000, tSkin), 1.E-6);                                    // bt11000 - tSkin
+        assertEquals(-30.0, ModisMeasures.heritageMeasureBT11(bt11000, tSkin), 1.E-2);                                    // bt11000 - tSkin
+        bt11000 = 12.0;
         assertEquals(-3.0, ModisMeasures.heritageMeasureSplitWindow(bt11000, bt12000), 1.E-6);                            // bt11000 - bt12000
         assertEquals(-11.25, ModisMeasures.heritageMeasureNegativeBT37minusBT11Night(bt3700, bt11000, true), 1.E-6);           // bt3700 - bt11000 at night
         assertEquals(-11.25, ModisMeasures.heritageMeasurePositiveBT37minusBT11NightMixedScene(bt3700, bt11000, true), 1.E-6); // bt3700 - bt11000 at night

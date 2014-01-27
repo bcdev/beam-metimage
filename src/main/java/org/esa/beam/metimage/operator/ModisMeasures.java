@@ -1,5 +1,7 @@
 package org.esa.beam.metimage.operator;
 
+import util.MetImageUtils;
+
 /**
  * MODIS measures for cloud tests as proposed by R.Preusker, FUB
  *
@@ -26,7 +28,8 @@ public class ModisMeasures {
 
     // heritage 1/7
     public static double heritageMeasureBT11(double bt11000, double tSkin) {
-        return convertToBrightnessTemperature(bt11000) - tSkin;
+//        return convertToBrightnessTemperature(bt11000) - tSkin;
+        return MetImageUtils.convertModisEmissiveRadianceToTemperature(bt11000, 31) - tSkin;
     }
 
     // heritage 2/7

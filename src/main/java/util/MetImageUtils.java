@@ -1,14 +1,32 @@
 package util;
 
+import org.esa.beam.metimage.MetImageConstants;
+
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 24.01.14
- * Time: 16:23
+ * MetImage utility class
  *
- * @author olafd
+ * @author M. Zuehlke, O. Danne
  */
 public class MetImageUtils {
+
+    public static double convertModisEmissiveRadianceToTemperature(double radiance, int emissiveBandNumber) {
+
+        final int wvlIndex = emissiveBandNumber - 20;
+        final double c1 = 2.0 * MetImageConstants.PLANCK_CONSTANT *
+                Math.pow(MetImageConstants.VACUUM_LIGHT_SPEED, 2.0);
+
+        final double c2 = MetImageConstants.PLANCK_CONSTANT * MetImageConstants.VACUUM_LIGHT_SPEED /
+                MetImageConstants.BOLTZMANN_CONSTANT;
+
+        // use metres in units:
+        final double wvlMetres = MetImageConstants.MODIS_EMISSIVE_WAVELENGTHS[wvlIndex]/1.E9;  // input is in microns!
+        final double radMetres = radiance*1.E6;
+
+        double temperature = c2 / (wvlMetres * Math.log(c1/(radMetres*Math.pow(wvlMetres, 5.0)) + 1.0));
+        temperature = (temperature - MetImageConstants.TCI[wvlIndex])/MetImageConstants.TCS[wvlIndex];
+
+        return temperature;
+    }
 
     public static double getCumulativeSum(double[] array, int startIndex, int endIndex) {
         double sum = 0.0;
@@ -31,8 +49,9 @@ public class MetImageUtils {
     public static double[] getAsPrimitiveDoubles(Double[] dArr) {
         double[] dPrimitiveArr = new double[dArr.length];
         for (int i = 0; i < dPrimitiveArr.length; i++) {
-            dPrimitiveArr[i] = dArr[i].doubleValue();
+            dPrimitiveArr[i] = dArr[i];
         }
         return dPrimitiveArr;
     }
+
 }

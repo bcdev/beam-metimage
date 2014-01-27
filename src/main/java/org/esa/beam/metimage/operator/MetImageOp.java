@@ -82,7 +82,7 @@ public class MetImageOp extends Operator {
         ModisSample new6Sample = getModisSample(MetImageConstants.MEASURE_NEW_6);
         ModisSample new7Sample = getModisSample(MetImageConstants.MEASURE_NEW_7);
 
-//        final double distSkillHeritage1 = getDistinctionSkill(heritage1Sample);  // todo activate when BT conversion is implemented
+        final double distSkillHeritage1 = getDistinctionSkill(heritage1Sample);  // todo activate when BT conversion is implemented
         final double distSkillHeritage2 = getDistinctionSkill(heritage2Sample);
         final double distSkillHeritage3 = getDistinctionSkill(heritage3Sample);
         final double distSkillHeritage4 = getDistinctionSkill(heritage4Sample);
@@ -99,7 +99,7 @@ public class MetImageOp extends Operator {
         final double distSkillNew7 = getDistinctionSkill(new7Sample);
 
         // todo: define a format for output product
-//        System.out.println("distSkillHeritage1 = " + distSkillHeritage1);
+        System.out.println("distSkillHeritage1 = " + distSkillHeritage1);
         System.out.println("distSkillHeritage2 = " + distSkillHeritage2);
         System.out.println("distSkillHeritage3 = " + distSkillHeritage3);
         System.out.println("distSkillHeritage4 = " + distSkillHeritage4);
@@ -216,7 +216,9 @@ public class MetImageOp extends Operator {
         double measure;
         switch (measureId) {
             case MetImageConstants.MEASURE_HERITAGE_1:
-                measure = ModisMeasures.heritageMeasureBT11(bt11000Tile.getSampleDouble(x, y), 0.0); // todo: tskin!
+                final double temperature11000 =
+                        MetImageUtils.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31);
+                measure = ModisMeasures.heritageMeasureBT11(temperature11000, 0.0); // todo: get Tskin!
                 break;
             case MetImageConstants.MEASURE_HERITAGE_2:
                 measure = ModisMeasures.heritageMeasureSplitWindow(bt11000Tile.getSampleDouble(x, y),
