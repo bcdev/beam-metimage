@@ -130,7 +130,7 @@ public class PrerequisitesTest {
         // now get the unequal spaced histogram...
         final MetImageHistogram histo2 = new MetImageHistogram(new int[nBins-1], minB, maxB, MetImageConstants.ALPHA);
         histo2.setUnequalBinBorders(newBins);
-        histo2.aggregateUnequalBins(b, false, IndexValidator.TRUE, ProgressMonitor.NULL);
+        histo2.aggregateUnequalBins(b, IndexValidator.TRUE, ProgressMonitor.NULL);
         histo2.computeDensityFunctions();
         System.out.println();
         // todo: add reasonable assertions

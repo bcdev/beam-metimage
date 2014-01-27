@@ -1,6 +1,8 @@
 package org.esa.beam.metimage.operator;
 
 import com.bc.ceres.core.ProgressMonitor;
+import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
+import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Min;
 import org.esa.beam.framework.datamodel.Band;
@@ -39,6 +41,10 @@ public class MetImageOp extends Operator {
 
     @TargetProduct
     private Product targetProduct;
+
+    // todo: make these two as user options...
+    private boolean equalizeHistograms = false;
+    private int numberOfBins = MetImageConstants.NUM_BINS;
 
     private int width;
     private int height;
@@ -161,27 +167,71 @@ public class MetImageOp extends Operator {
         final double min = Math.min(cloudSampleMin, noCloudSampleMin);
         final double max = Math.max(cloudSampleMax, noCloudSampleMax);
 
-        final MetImageHistogram cloudHisto = new MetImageHistogram(new int[MetImageConstants.NUM_BINS],
+        final MetImageHistogram cloudHisto = new MetImageHistogram(new int[numberOfBins],
                 min, max,
                 MetImageConstants.ALPHA);
         cloudHisto.aggregate(cloudSamples, false, IndexValidator.TRUE, ProgressMonitor.NULL);
         cloudHisto.computeDensityFunctions();
 
-        final MetImageHistogram noCloudHisto = new MetImageHistogram(new int[MetImageConstants.NUM_BINS],
+        final MetImageHistogram noCloudHisto = new MetImageHistogram(new int[numberOfBins],
                 min, max,
                 MetImageConstants.ALPHA);
         noCloudHisto.aggregate(noCloudSamples, false, IndexValidator.TRUE, ProgressMonitor.NULL);
         noCloudHisto.computeDensityFunctions();
 
-        final double distSkillRho860 =
-                DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(noCloudHisto,
-                        cloudHisto,
-                        numNoCloud,
-                        numCloud);
+        double distSkill;
+        if (equalizeHistograms) {
+            final MetImageHistogram cloudEqualizedHisto = getEqualizedHistogram(cloudSamples);
+            final MetImageHistogram noCloudEqualizedHisto = getEqualizedHistogram(noCloudSamples);
+            distSkill = DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(noCloudEqualizedHisto,
+                                        cloudEqualizedHisto,
+                                        numNoCloud,
+                                        numCloud);
+        } else {
+            distSkill = DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(noCloudHisto,
+                            cloudHisto,
+                            numNoCloud,
+                            numCloud);
+        }
 
-        return distSkillRho860;
+        return distSkill;
     }
 
+    MetImageHistogram getEqualizedHistogram(double[] srcSamples) {
+
+        int nBins = MetImageHistogram.findOptimalNumberOfBins(srcSamples);
+
+        // first get a 'normal' histo with 1000 equally spaced bins...
+        final double maxSrcSamples = (new Max()).evaluate(srcSamples);
+        final double minSrcSamples = (new Min()).evaluate(srcSamples);
+        final MetImageHistogram equalSpacedBinsHisto = new MetImageHistogram(new int[1000],
+                minSrcSamples,
+                maxSrcSamples,
+                MetImageConstants.ALPHA);
+        equalSpacedBinsHisto.aggregate(srcSamples, false, IndexValidator.TRUE, ProgressMonitor.NULL);
+        equalSpacedBinsHisto.computeDensityFunctions();
+
+        LinearInterpolator interpolator = new LinearInterpolator();
+        final PolynomialSplineFunction equalBinsHistoPsf = interpolator.interpolate(MetImageUtils.getAsDoubles(equalSpacedBinsHisto.getCdf()),
+                MetImageUtils.getAsDoubles(equalSpacedBinsHisto.getEqualBinBorders()));
+
+        double[] equalSpacedBins = new double[nBins];
+        double[] unequalSpacedBins = new double[nBins];
+        for (int i = 0; i < unequalSpacedBins.length; i++) {
+            equalSpacedBins[i] = i * 1.0 / (unequalSpacedBins.length - 1);
+            unequalSpacedBins[i] = equalBinsHistoPsf.value(equalSpacedBins[i]);
+        }
+
+        // now get the equalized histogram which has unequal spaced bins...
+        final MetImageHistogram equalizedHistogram = new MetImageHistogram(new int[nBins - 1],
+                minSrcSamples, maxSrcSamples,
+                MetImageConstants.ALPHA);
+        equalizedHistogram.setUnequalBinBorders(unequalSpacedBins);
+        equalizedHistogram.aggregateUnequalBins(srcSamples, IndexValidator.TRUE, ProgressMonitor.NULL);
+        equalizedHistogram.computeDensityFunctions();
+
+        return equalizedHistogram;
+    }
 
     // provides an object holding cloudy and non-cloudy arrays of a measure with given ID
     private ModisSample getModisSample(int measureId) {

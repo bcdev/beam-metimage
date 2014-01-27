@@ -16,15 +16,14 @@ import java.util.Arrays;
 /**
  * Histogram class for MetImage purposes
  *
- * @authors Marco Zuehlke, Olaf Danne
+ * @author Marco Zuehlke, Olaf Danne
  */
 public class MetImageHistogram extends Histogram {
 
     private float[] equalBinBorders;      // one element more than number of bins!
     private double[] unequalBinBorders;    // one element more than number of bins!
     private float[] pdf;
-    private float[] equalizedPdf;
-    private float[] cdf;             // todo: check if needed
+    private float[] cdf;
     private int alpha;
 
     /**
@@ -36,17 +35,16 @@ public class MetImageHistogram extends Histogram {
      */
     public MetImageHistogram(int[] binCounts, double min, double max, int alpha) {
         super(binCounts, min, max);
-        this.cdf = new float[binCounts.length+1];
+        this.cdf = new float[binCounts.length + 1];
         this.pdf = new float[binCounts.length];
-        this.equalizedPdf = new float[binCounts.length];
         this.alpha = alpha;
         computeEqualBinBorders();
     }
 
     private void computeEqualBinBorders() {
-        equalBinBorders = new float[pdf.length+1];
+        equalBinBorders = new float[pdf.length + 1];
         for (int i = 0; i < equalBinBorders.length; i++) {
-            equalBinBorders[i] = (float) getMin() + i*((float) getMax() - (float) getMin())/(equalBinBorders.length-1);
+            equalBinBorders[i] = (float) getMin() + i * ((float) getMax() - (float) getMin()) / (equalBinBorders.length - 1);
         }
     }
 
@@ -64,7 +62,6 @@ public class MetImageHistogram extends Histogram {
 
     public void computeDensityFunctions() {
         computePdf();
-        computeEqualizedPdf();
         computeCdf();
     }
 
@@ -72,12 +69,38 @@ public class MetImageHistogram extends Histogram {
         return pdf;
     }
 
-    public float[] getEqualizedPdf() {
-        return equalizedPdf;
-    }
-
     public float[] getCdf() {
         return cdf;
+    }
+
+    public static int findOptimalNumberOfBins(double[] b) {
+
+        Arrays.sort(b);
+        Percentile pp = new Percentile();
+        final double p75 = pp.evaluate(b, 75.0);
+        final double p25 = pp.evaluate(b, 25.0);
+
+        final double pDiff = p75 - p25;
+        final double h = 2.0 * pDiff / (Math.pow(b.length, 1. / 3.));
+
+        final double maxB = (new Max()).evaluate(b);
+        final double minB = (new Min()).evaluate(b);
+
+        return (int) Math.ceil((maxB - minB) / h);
+    }
+
+    public void aggregateUnequalBins(final double[] values,
+                                     final IndexValidator validator,
+                                     ProgressMonitor pm) {
+        Guardian.assertNotNull("validator", validator);
+        final Histogram histogram = computeHistogramUnequalBins(values, getUnequalBinBorders(), validator,
+                getNumBins(), new Range(getMin(), getMax()),
+                null, pm);
+        final int[] newCounts = histogram.getBinCounts();
+        final int[] thisCounts = getBinCounts();
+        for (int i = 0; i < thisCounts.length; i++) {
+            thisCounts[i] += newCounts[i];
+        }
     }
 
 
@@ -90,48 +113,17 @@ public class MetImageHistogram extends Histogram {
 
     private void normalizeAlpha() {
         for (int i = 0; i < pdf.length; i++) {
-            pdf[i] += alpha*1.0/(pdf.length + alpha* MetImageConstants.NUM_BINS);
+            pdf[i] += alpha * 1.0 / (pdf.length + alpha * MetImageConstants.NUM_BINS);
         }
     }
-
-    public void computeEqualizedPdf() {
-        equalizedPdf = pdf;
-
-        // todo: check what we really need to do here, then activate
-//        float[] normPdf = normalizeDist(pdf);
-//        float sumr, sumrx;
-//        sumr = sumrx = 0;
-//        for (int i = 0; i < pdf.length; i++) {
-//            sumr += pdf[i];
-//            sumrx = (pdf.length-1) * sumr;
-//            int valr = (int) (sumrx);
-//            equalizedPdf[i] = valr;
-//        }
-
-
-
-    }
-
 
     private void computeCdf() {
         final int nCdf = cdf.length;
-        cdf[nCdf-1] = getCumulativeSum(pdf, 0, nCdf-1);
-        for (int i=0; i<nCdf; i++) {
-            cdf[i] = getCumulativeSum(pdf, 0, i) / cdf[nCdf-1];
+        cdf[nCdf - 1] = getCumulativeSum(pdf, 0, nCdf - 1);
+        for (int i = 0; i < nCdf; i++) {
+            cdf[i] = getCumulativeSum(pdf, 0, i) / cdf[nCdf - 1];
         }
     }
-
-//    private static float[] normalizeDist(float[] inputDist) {
-//        float[] normalizedPdf = new float[inputDist.length];
-//        float sumV = 0.0f;
-//        for (int i = 0; i < inputDist.length; i++) {
-//            sumV = sumV + inputDist[i];
-//        }
-//        for (int i = 0; i < inputDist.length; i++) {
-//            normalizedPdf[i] = inputDist[i]/sumV;
-//        }
-//        return normalizedPdf;
-//    }
 
     private float getCumulativeSum(float[] array, int startIndex, int endIndex) {
         float sum = 0.0f;
@@ -143,43 +135,13 @@ public class MetImageHistogram extends Histogram {
         return sum;
     }
 
-    public static int findOptimalNumberOfBins(double[] b) {
-
-        Arrays.sort(b);
-        Percentile pp = new Percentile();
-        final double p75 = pp.evaluate(b, 75.0);
-        final double p25 = pp.evaluate(b, 25.0);
-
-        final double pDiff = p75 - p25;
-        final double h = 2.0*pDiff/(Math.pow(b.length, 1./3.));
-
-        final double maxB = (new Max()).evaluate(b);
-        final double minB = (new Min()).evaluate(b);
-
-        return (int) Math.ceil((maxB - minB)/h);
-    }
-
-    public void aggregateUnequalBins(final double[] values, boolean unsigned,
-                          final IndexValidator validator,
-                          ProgressMonitor pm) {
-        Guardian.assertNotNull("validator", validator);
-        final Histogram histogram = computeHistogramUnequalBins(values, getUnequalBinBorders(), validator,
-                                                                getNumBins(), new Range(getMin(), getMax()),
-                                                                null, pm);
-        final int[] newCounts = histogram.getBinCounts();
-        final int[] thisCounts = getBinCounts();
-        for (int i = 0; i < thisCounts.length; i++) {
-            thisCounts[i] += newCounts[i];
-        }
-    }
-
     private Histogram computeHistogramUnequalBins(final double[] values,
                                                   double[] binBorders,
-                                                         final IndexValidator validator,
-                                                         final int numBins,
-                                                         Range range,
-                                                         Histogram histogram,
-                                                         ProgressMonitor pm) {
+                                                  final IndexValidator validator,
+                                                  final int numBins,
+                                                  Range range,
+                                                  Histogram histogram,
+                                                  ProgressMonitor pm) {
         Guardian.assertNotNull("validator", validator);
         final int numValues = values.length;
         final int[] binVals = new int[numBins];
@@ -227,10 +189,10 @@ public class MetImageHistogram extends Histogram {
     private int findUnequalBinIndex(double value, double[] binBorders) {
         for (int i = 1; i < binBorders.length; i++) {
             if (value < binBorders[i]) {
-                return i-1;
+                return i - 1;
             }
         }
-        return binBorders.length-1;
+        return binBorders.length - 1;
     }
 
 }
