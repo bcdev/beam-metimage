@@ -17,8 +17,10 @@ public class DistinctionSkill {
                                                                               int numA, int numB) {
         final double[] pdfA = MetImageUtils.getAsDoubles(noCloudHisto.getPdf());
         final double[] pdfB = MetImageUtils.getAsDoubles(cloudHisto.getPdf());
-        final double[] bins = MetImageUtils.getAsDoubles(noCloudHisto.getBinBorders());
-        return computeDistinctionSkillFromCramerMisesAndersonMetric(pdfA, pdfB, bins, numA, numB);
+        final double[] cdfA = MetImageUtils.getAsDoubles(noCloudHisto.getCdf());
+        final double[] cdfB = MetImageUtils.getAsDoubles(cloudHisto.getCdf());
+        final double[] bins = MetImageUtils.getAsDoubles(noCloudHisto.getEqualBinBorders());
+        return computeDistinctionSkillFromCramerMisesAndersonMetric(pdfA, pdfB, cdfA, cdfB, bins, numA, numB);
     }
 
 
@@ -37,47 +39,47 @@ public class DistinctionSkill {
     public static double computeDistinctionSkillFromCramerMisesAndersonMetric(double[] pdfa, double[] pdfb, double[] bins,
                                                                               int numA, int numB) {
 
-        // implement this (see: MI_tools.py provided by RP):
-
-//        #calc cumulative sum and norm it  to cumulative  probability
-//          cdfa=np.zeros(len(pdfa)+1)
-//          cdfb=np.zeros(len(pdfb)+1)
-//          cdfa[1:]=pdfa.cumsum()
-//          cdfa/= cdfa[-1]            # in python, cdfa[-1] = cdfa[len(cdfa)-1] !!!
-//          cdfb[1:]=pdfb.cumsum()
-//          cdfb/= cdfb[-1]
-//          f_cdfa  = interp1d(bins,cdfa)
-//          f_cdfb  = interp1d(bins,cdfb)
-//          f_cdfab = interp1d(bins,(cdfb*nb+cdfa*na)/(na+nb))
-//
-//          # define quantiles in physical space
-//          nn=100000
-//          q=np.linspace(bins[0],bins[-1],nn)
-//          # distance
-//          ff=(f_cdfa(q)-f_cdfb(q))**2
-//          # integral and norm
-//          return np.trapz(ff,f_cdfab(q))*3.
-//
-
         final int nPdfa = pdfa.length;
         final int nPdfb = pdfb.length;
         final int nBins = bins.length;
 
-        if (nPdfa != nPdfb) {
-            throw new IllegalArgumentException("Histograms have unequal length - cannot proceed.");
-        }
-
-        if (nBins != nPdfa + 1) {
-            throw new IllegalArgumentException("Number of histogram bins does not match - cannot proceed.");
-        }
+        checkHistogramDimensions(nPdfa, nPdfb, nBins);
 
         double[] cdfa = new double[nPdfa+1];
         double[] cdfb = new double[nPdfb+1];
         final int nCdfa = cdfa.length;
         final int nCdfb = cdfb.length;
 
-        getCumulativeSumAndNormalize(pdfa, cdfa, nCdfa);
-        getCumulativeSumAndNormalize(pdfb, cdfb, nCdfb);
+        MetImageUtils.getCumulativeSumAndNormalize(pdfa, cdfa, nCdfa);
+        MetImageUtils.getCumulativeSumAndNormalize(pdfb, cdfb, nCdfb);
+
+        return computeDistinctionSkillFromCramerMisesAndersonMetric(pdfa, pdfb, cdfa, cdfb, bins, numA, numB);
+    }
+
+    /**
+     * Computes the distinction skill based on Cramer-v.Mises-Anderson Metric following R.Preusker, FUB
+     * (Python implementation: MI_tools.py)
+     *
+     * @param pdfa - empirical pdf A
+     * @param pdfb - empirical pdf B
+     * @param cdfa - empirical cdf A
+     * @param cdfb - empirical cdf B
+     * @param bins - the bins (one element more than the pdfs!)
+     * @param numA - number of samples of pdfa
+     * @param numB - number of samples of pdfb  (Needed to calculate the empirical pdf of the two functions together.
+    If not given, equal numbers are assumed.)
+     * @return double - the distinction skill
+     */
+    public static double computeDistinctionSkillFromCramerMisesAndersonMetric(double[] pdfa, double[] pdfb,
+                                                                              double[] cdfa, double[] cdfb,
+                                                                              double[] bins,
+                                                                              int numA, int numB) {
+
+        final int nPdfa = pdfa.length;
+        final int nPdfb = pdfb.length;
+        final int nBins = bins.length;
+
+        checkHistogramDimensions(nPdfa, nPdfb, nBins);
 
         final double[] cdfab = getCdfAb(cdfa, cdfb, numA, numB);
 
@@ -99,10 +101,13 @@ public class DistinctionSkill {
         return 3.0 * trapezIntegration(distances, fCdfab, quantiles);
     }
 
-    private static void getCumulativeSumAndNormalize(double[] pdf, double[] cdf, int nCdf) {
-        cdf[nCdf-1] = MetImageUtils.getCumulativeSum(pdf, 0, nCdf - 1);
-        for (int i=0; i<nCdf; i++) {
-            cdf[i] = MetImageUtils.getCumulativeSum(pdf, 0, i) / cdf[nCdf-1];
+    private static void checkHistogramDimensions(int nPdfa, int nPdfb, int nBins) {
+        if (nPdfa != nPdfb) {
+            throw new IllegalArgumentException("Histograms have unequal length - cannot proceed.");
+        }
+
+        if (nBins != nPdfa + 1) {
+            throw new IllegalArgumentException("Number of histogram bins does not match - cannot proceed.");
         }
     }
 

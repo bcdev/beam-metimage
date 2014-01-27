@@ -38,6 +38,14 @@ public class MetImageUtils {
         return sum;
     }
 
+    public static void getCumulativeSumAndNormalize(double[] cumArray, double[] normArray, int N) {
+        normArray[N-1] = MetImageUtils.getCumulativeSum(cumArray, 0, N - 1);
+        for (int i=0; i<N; i++) {
+            normArray[i] = MetImageUtils.getCumulativeSum(cumArray, 0, i) / normArray[N-1];
+        }
+    }
+
+
     public static double[] getAsDoubles(float[] fArr) {
         double[] dArr = new double[fArr.length];
         for (int i = 0; i < dArr.length; i++) {
