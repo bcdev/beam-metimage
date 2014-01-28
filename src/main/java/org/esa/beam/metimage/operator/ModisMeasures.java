@@ -1,6 +1,6 @@
 package org.esa.beam.metimage.operator;
 
-import util.MetImageUtils;
+import org.esa.beam.metimage.MetImageConstants;
 
 /**
  * MODIS measures for cloud tests as proposed by R.Preusker, FUB
@@ -10,7 +10,7 @@ import util.MetImageUtils;
 public class ModisMeasures {
 
     // quantities:
-    // RefSB.13 (667nm) // todo: take lo or hi ?
+    // RefSB.13 (667nm)
     // RefSB.16 (869.5nm)
     // RefSB.26 (1375nm)
     // Emissive.20 (3750nm)
@@ -28,8 +28,7 @@ public class ModisMeasures {
 
     // heritage 1/7
     public static double heritageMeasureBT11(double bt11000, double tSkin) {
-//        return convertToBrightnessTemperature(bt11000) - tSkin;
-        return MetImageUtils.convertModisEmissiveRadianceToTemperature(bt11000, 31) - tSkin;
+        return convertModisEmissiveRadianceToTemperature(bt11000, 31) - tSkin;
     }
 
     // heritage 2/7
@@ -125,10 +124,25 @@ public class ModisMeasures {
         }
     }
 
+    public static double convertModisEmissiveRadianceToTemperature(double radiance, int emissiveBandNumber) {
 
-    private static double convertToBrightnessTemperature(double emissiveValue) {
-        return 288.0; // todo implement
+        final int wvlIndex = emissiveBandNumber - 20;
+        final double c1 = 2.0 * MetImageConstants.PLANCK_CONSTANT *
+                Math.pow(MetImageConstants.VACUUM_LIGHT_SPEED, 2.0);
+
+        final double c2 = MetImageConstants.PLANCK_CONSTANT * MetImageConstants.VACUUM_LIGHT_SPEED /
+                MetImageConstants.BOLTZMANN_CONSTANT;
+
+        // use metres in units:
+        final double wvlMetres = MetImageConstants.MODIS_EMISSIVE_WAVELENGTHS[wvlIndex]/1.E9;  // input is in microns!
+        final double radMetres = radiance*1.E6;
+
+        double temperature = c2 / (wvlMetres * Math.log(c1/(radMetres*Math.pow(wvlMetres, 5.0)) + 1.0));
+        temperature = (temperature - MetImageConstants.TCI[wvlIndex])/MetImageConstants.TCS[wvlIndex];
+
+        return temperature;
     }
+
 
     private static double combine(double A, double B) {
         return A * B; // todo: define this measure

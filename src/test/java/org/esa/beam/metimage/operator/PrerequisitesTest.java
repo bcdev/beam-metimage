@@ -1,12 +1,11 @@
 package org.esa.beam.metimage.operator;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
-import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.commons.math3.distribution.BetaDistribution;
+import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Min;
-import org.esa.beam.metimage.MetImageConstants;
 import org.esa.beam.metimage.math.MetImageHistogram;
 import org.esa.beam.util.math.IndexValidator;
 import org.junit.Before;
@@ -14,6 +13,7 @@ import org.junit.Test;
 import util.MetImageUtils;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import static org.esa.beam.GlobalTestTools.equal;
 
 public class PrerequisitesTest {
@@ -33,8 +33,8 @@ public class PrerequisitesTest {
         final int alpha = 0;
 
         final MetImageHistogram histogram = new MetImageHistogram(new int[6], -2, 3, alpha);
-        for (int i = 0; i < values.length; i++) {
-            histogram.aggregate(values[i], unsigned, IndexValidator.TRUE, ProgressMonitor.NULL);
+        for (double[] value : values) {
+            histogram.aggregate(value, unsigned, IndexValidator.TRUE, ProgressMonitor.NULL);
         }
         histogram.computeDensityFunctions();
 
@@ -70,8 +70,8 @@ public class PrerequisitesTest {
         final int alpha = 1;
 
         final MetImageHistogram histogram = new MetImageHistogram(new int[6], -2, 3, alpha);
-        for (int i = 0; i < values.length; i++) {
-            histogram.aggregate(values[i], unsigned, IndexValidator.TRUE, ProgressMonitor.NULL);
+        for (double[] value : values) {
+            histogram.aggregate(value, unsigned, IndexValidator.TRUE, ProgressMonitor.NULL);
         }
         histogram.computeDensityFunctions();
 
@@ -100,41 +100,27 @@ public class PrerequisitesTest {
     public void testComputeHistogramEqualized() {
         double[] b = new double[25000];
 
-        BetaDistribution beta=new BetaDistribution(2.0, 5.0);
-        for(int i=0;i<b.length;i++) {
-            b[i]=beta.sample();
+        BetaDistribution beta = new BetaDistribution(2.0, 5.0);
+        beta.reseedRandomGenerator(0);
+        for (int i = 0; i < b.length; i++) {
+            b[i] = beta.sample();
         }
+        MetImageHistogram equalizedHistogram = MetImageHistogram.createAggregatedEqualizedHistogram(b);
 
-        int nBins = MetImageHistogram.findOptimalNumberOfBins(b);
-        System.out.println("nBins = " + nBins);
-//        assertEquals(57, nBins);
-
-        // first get 'normal' histo with 1000 equally spaced bins...
-        final double maxB = (new Max()).evaluate(b);
-        final double minB = (new Min()).evaluate(b);
-        final MetImageHistogram histo1 = new MetImageHistogram(new int[1000], minB, maxB, MetImageConstants.ALPHA);
-        histo1.aggregate(b, false, IndexValidator.TRUE, ProgressMonitor.NULL);
-        histo1.computeDensityFunctions();
-
-        LinearInterpolator interpolator = new LinearInterpolator();
-
-        final PolynomialSplineFunction histo1Func = interpolator.interpolate(MetImageUtils.getAsDoubles(histo1.getCdf()),
-                                                                             MetImageUtils.getAsDoubles(histo1.getEqualBinBorders()));
-        double[] equalBins = new double[nBins];
-        double[] newBins = new double[nBins];
-        for (int i = 0; i < newBins.length; i++) {
-            equalBins[i] = i*1.0/(newBins.length-1);
-            newBins[i] =  histo1Func.value(equalBins[i]);
-        }
-
-        // now get the unequal spaced histogram...
-        final MetImageHistogram histo2 = new MetImageHistogram(new int[nBins-1], minB, maxB, MetImageConstants.ALPHA);
-        histo2.setUnequalBinBorders(newBins);
-        histo2.aggregateUnequalBins(b, IndexValidator.TRUE, ProgressMonitor.NULL);
-        histo2.computeDensityFunctions();
-        System.out.println();
-        // todo: add reasonable assertions
+        final double[] pdf = MetImageUtils.getAsDoubles(equalizedHistogram.getPdf());
+        final double stDev = (new StandardDeviation()).evaluate(pdf);
+        final double mean = (new Mean()).evaluate(pdf);
+        final double min = (new Min()).evaluate(pdf);
+        final double max = (new Max()).evaluate(pdf);
+        System.out.println("#bins : " + equalizedHistogram.getUnequalBinBorders().length);
+        System.out.println("mean = " + mean);
+        System.out.println("stDev = " + stDev);
+        System.out.println("min = " + min);
+        System.out.println("max = " + max);
+        // do some reasonable checks for a more or less 'equal' histogram...
+        assertTrue(stDev < 0.01*mean);
+        assertTrue(min > mean - 3.0*stDev);
+        assertTrue(max < mean + 3.0*stDev);
     }
-
 
 }

@@ -1,8 +1,5 @@
 package org.esa.beam.metimage.operator;
 
-import com.bc.ceres.core.ProgressMonitor;
-import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
-import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Min;
 import org.esa.beam.framework.datamodel.Band;
@@ -12,6 +9,7 @@ import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
+import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.metimage.MetImageConstants;
@@ -30,9 +28,9 @@ import java.util.List;
  * @author Marco Zuehlke, Olaf Danne
  */
 @OperatorMetadata(alias = "beam.metimage", version = "1.0-SNAPSHOT",
-        authors = "Rene Preusker, Olaf Danne, Marco Zuehlke",
-        copyright = "(c) 2013/14 FU Berlin, Brockmann Consult",
-        description = "Operator for MetImage Cloud processing.")
+                  authors = "Rene Preusker, Olaf Danne, Marco Zuehlke",
+                  copyright = "(c) 2013/14 FU Berlin, Brockmann Consult",
+                  description = "Operator for MetImage Cloud processing.")
 public class MetImageOp extends Operator {
     public static final String VERSION = "1.0-SNAPSHOT";
 
@@ -42,9 +40,17 @@ public class MetImageOp extends Operator {
     @TargetProduct
     private Product targetProduct;
 
-    // todo: make these two as user options...
-    private boolean equalizeHistograms = false;
-    private int numberOfBins = MetImageConstants.NUM_BINS;
+
+    @Parameter(description = "If set, 'cloud' and 'no cloud' histograms will be equalized",
+               label = "Equalize histograms",
+               defaultValue = "false")
+    private boolean equalizeHistograms;
+
+    @Parameter(description = "If set, use GETASSE30 DEM, otherwise get altitudes from product TPGs",
+               label = "Use GETASSE30 DEM",
+               defaultValue = "20")
+    private int numberOfBins;
+
 
     private int width;
     private int height;
@@ -88,7 +94,7 @@ public class MetImageOp extends Operator {
         ModisSample new6Sample = getModisSample(MetImageConstants.MEASURE_NEW_6);
         ModisSample new7Sample = getModisSample(MetImageConstants.MEASURE_NEW_7);
 
-        final double distSkillHeritage1 = getDistinctionSkill(heritage1Sample);  // todo activate when BT conversion is implemented
+        final double distSkillHeritage1 = getDistinctionSkill(heritage1Sample);
         final double distSkillHeritage2 = getDistinctionSkill(heritage2Sample);
         final double distSkillHeritage3 = getDistinctionSkill(heritage3Sample);
         final double distSkillHeritage4 = getDistinctionSkill(heritage4Sample);
@@ -152,10 +158,10 @@ public class MetImageOp extends Operator {
         bt12000Tile = getSourceTile(bt12000Band, sampleRect);
     }
 
-    private double getDistinctionSkill(ModisSample rho860Sample) {
-        final double[] cloudSamples = rho860Sample.getCloudSamples();
+    private double getDistinctionSkill(ModisSample modisSample) {
+        final double[] cloudSamples = modisSample.getCloudSamples();
         final int numCloud = cloudSamples.length;
-        final double[] noCloudSamples = rho860Sample.getNoCloudSamples();
+        final double[] noCloudSamples = modisSample.getNoCloudSamples();
         final int numNoCloud = noCloudSamples.length;
 
         final double cloudSampleMax = (new Max()).evaluate(cloudSamples);
@@ -167,70 +173,49 @@ public class MetImageOp extends Operator {
         final double min = Math.min(cloudSampleMin, noCloudSampleMin);
         final double max = Math.max(cloudSampleMax, noCloudSampleMax);
 
-        final MetImageHistogram cloudHisto = new MetImageHistogram(new int[numberOfBins],
-                min, max,
-                MetImageConstants.ALPHA);
-        cloudHisto.aggregate(cloudSamples, false, IndexValidator.TRUE, ProgressMonitor.NULL);
-        cloudHisto.computeDensityFunctions();
-
-        final MetImageHistogram noCloudHisto = new MetImageHistogram(new int[numberOfBins],
-                min, max,
-                MetImageConstants.ALPHA);
-        noCloudHisto.aggregate(noCloudSamples, false, IndexValidator.TRUE, ProgressMonitor.NULL);
-        noCloudHisto.computeDensityFunctions();
-
+        MetImageHistogram cloudHisto;
+        MetImageHistogram noCloudHisto;
         double distSkill;
+
         if (equalizeHistograms) {
-            final MetImageHistogram cloudEqualizedHisto = getEqualizedHistogram(cloudSamples);
-            final MetImageHistogram noCloudEqualizedHisto = getEqualizedHistogram(noCloudSamples);
-            distSkill = DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(noCloudEqualizedHisto,
-                                        cloudEqualizedHisto,
-                                        numNoCloud,
-                                        numCloud);
+            final double[] allSamples = mergeSamples(cloudSamples, numCloud, noCloudSamples, numNoCloud);
+            final int nBins = MetImageHistogram.findOptimalNumberOfBins(allSamples);
+            if (nBins > 0) {
+                final MetImageHistogram allSamplesEqualizedHisto = MetImageHistogram.createAggregatedEqualizedHistogram(allSamples);
+                final double[] unequalBins = allSamplesEqualizedHisto.getUnequalBinBorders();
+
+                // now get the unequal spaced cloud and noCloudhistograms...
+                cloudHisto = new MetImageHistogram(new int[unequalBins.length - 1], min, max, MetImageConstants.ALPHA);
+                cloudHisto.setUnequalBinBorders(unequalBins);
+                cloudHisto.aggregateUnequalBins(cloudSamples, IndexValidator.TRUE);
+                cloudHisto.computeDensityFunctions();
+                noCloudHisto = new MetImageHistogram(new int[unequalBins.length - 1], min, max, MetImageConstants.ALPHA);
+                noCloudHisto.setUnequalBinBorders(unequalBins);
+                noCloudHisto.aggregateUnequalBins(noCloudSamples, IndexValidator.TRUE);
+                noCloudHisto.computeDensityFunctions();
+            } else {
+                System.out.println("Cannot perform equalization for measure ID '" + modisSample.getMeasureID() +
+                                           "' (no valid bins found) - compute distinction skill without equalization.");
+                cloudHisto = MetImageHistogram.createAggregatedHistogram(cloudSamples, numberOfBins, min, max);
+                noCloudHisto = MetImageHistogram.createAggregatedHistogram(noCloudSamples, numberOfBins, min, max);
+            }
         } else {
-            distSkill = DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(noCloudHisto,
-                            cloudHisto,
-                            numNoCloud,
-                            numCloud);
+            cloudHisto = MetImageHistogram.createAggregatedHistogram(cloudSamples, numberOfBins, min, max);
+            noCloudHisto = MetImageHistogram.createAggregatedHistogram(noCloudSamples, numberOfBins, min, max);
         }
+        distSkill = DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(noCloudHisto,
+                                                                                          cloudHisto,
+                                                                                          numNoCloud,
+                                                                                          numCloud);
 
         return distSkill;
     }
 
-    MetImageHistogram getEqualizedHistogram(double[] srcSamples) {
-
-        int nBins = MetImageHistogram.findOptimalNumberOfBins(srcSamples);
-
-        // first get a 'normal' histo with 1000 equally spaced bins...
-        final double maxSrcSamples = (new Max()).evaluate(srcSamples);
-        final double minSrcSamples = (new Min()).evaluate(srcSamples);
-        final MetImageHistogram equalSpacedBinsHisto = new MetImageHistogram(new int[1000],
-                minSrcSamples,
-                maxSrcSamples,
-                MetImageConstants.ALPHA);
-        equalSpacedBinsHisto.aggregate(srcSamples, false, IndexValidator.TRUE, ProgressMonitor.NULL);
-        equalSpacedBinsHisto.computeDensityFunctions();
-
-        LinearInterpolator interpolator = new LinearInterpolator();
-        final PolynomialSplineFunction equalBinsHistoPsf = interpolator.interpolate(MetImageUtils.getAsDoubles(equalSpacedBinsHisto.getCdf()),
-                MetImageUtils.getAsDoubles(equalSpacedBinsHisto.getEqualBinBorders()));
-
-        double[] equalSpacedBins = new double[nBins];
-        double[] unequalSpacedBins = new double[nBins];
-        for (int i = 0; i < unequalSpacedBins.length; i++) {
-            equalSpacedBins[i] = i * 1.0 / (unequalSpacedBins.length - 1);
-            unequalSpacedBins[i] = equalBinsHistoPsf.value(equalSpacedBins[i]);
-        }
-
-        // now get the equalized histogram which has unequal spaced bins...
-        final MetImageHistogram equalizedHistogram = new MetImageHistogram(new int[nBins - 1],
-                minSrcSamples, maxSrcSamples,
-                MetImageConstants.ALPHA);
-        equalizedHistogram.setUnequalBinBorders(unequalSpacedBins);
-        equalizedHistogram.aggregateUnequalBins(srcSamples, IndexValidator.TRUE, ProgressMonitor.NULL);
-        equalizedHistogram.computeDensityFunctions();
-
-        return equalizedHistogram;
+    private double[] mergeSamples(double[] cloudSamples, int numCloud, double[] noCloudSamples, int numNoCloud) {
+        double[] allSamples = new double[numCloud + numNoCloud];
+        System.arraycopy(cloudSamples, 0, allSamples, 0, numCloud);
+        System.arraycopy(noCloudSamples, 0, allSamples, numCloud, numNoCloud);
+        return allSamples;
     }
 
     // provides an object holding cloudy and non-cloudy arrays of a measure with given ID
@@ -266,31 +251,29 @@ public class MetImageOp extends Operator {
         double measure;
         switch (measureId) {
             case MetImageConstants.MEASURE_HERITAGE_1:
-                final double temperature11000 =
-                        MetImageUtils.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31);
-                measure = ModisMeasures.heritageMeasureBT11(temperature11000, 0.0); // todo: get Tskin!
+                measure = ModisMeasures.heritageMeasureBT11(bt11000Tile.getSampleDouble(x, y), 0.0); // todo: get Tskin!
                 break;
             case MetImageConstants.MEASURE_HERITAGE_2:
                 measure = ModisMeasures.heritageMeasureSplitWindow(bt11000Tile.getSampleDouble(x, y),
-                        bt12000Tile.getSampleDouble(x, y));
+                                                                   bt12000Tile.getSampleDouble(x, y));
                 break;
             case MetImageConstants.MEASURE_HERITAGE_3:
                 measure = ModisMeasures.heritageMeasureNegativeBT37minusBT11Night(bt3700Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y),
-                        isSampleNight(daytimeTile, x, y));
+                                                                                  bt11000Tile.getSampleDouble(x, y),
+                                                                                  isSampleNight(daytimeTile, x, y));
                 break;
             case MetImageConstants.MEASURE_HERITAGE_4:
                 measure = ModisMeasures.heritageMeasurePositiveBT37minusBT11NightMixedScene(bt3700Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y),
-                        isSampleNight(daytimeTile, x, y));
+                                                                                            bt11000Tile.getSampleDouble(x, y),
+                                                                                            isSampleNight(daytimeTile, x, y));
                 break;
             case MetImageConstants.MEASURE_HERITAGE_5:
                 measure = ModisMeasures.heritageMeasureSolarBrightnessThresholdsOcean(rho860Tile.getSampleDouble(x, y),
-                        isSampleLand(surfaceTypeTile, x, y));
+                                                                                      isSampleLand(surfaceTypeTile, x, y));
                 break;
             case MetImageConstants.MEASURE_HERITAGE_6:
                 measure = ModisMeasures.heritageMeasureSolarBrightnessThresholdsLand(rho600Tile.getSampleDouble(x, y),
-                        isSampleLand(surfaceTypeTile, x, y));
+                                                                                     isSampleLand(surfaceTypeTile, x, y));
                 break;
             case MetImageConstants.MEASURE_HERITAGE_7:
                 measure = ModisMeasures.heritageMeasureUniformity(Double.NaN);     // todo!
@@ -300,29 +283,29 @@ public class MetImageOp extends Operator {
                 break;
             case MetImageConstants.MEASURE_NEW_2:
                 measure = ModisMeasures.newMeasureBT11(bt7300Tile.getSampleDouble(x, y),
-                        bt8600Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y),
-                        isSampleLand(surfaceTypeTile, x, y));
+                                                       bt8600Tile.getSampleDouble(x, y),
+                                                       bt11000Tile.getSampleDouble(x, y),
+                                                       isSampleLand(surfaceTypeTile, x, y));
                 break;
             case MetImageConstants.MEASURE_NEW_3:
                 measure = ModisMeasures.newMeasureCO2();
                 break;
             case MetImageConstants.MEASURE_NEW_4:
                 measure = ModisMeasures.newMeasureBT37minusBT87Deserts(bt3700Tile.getSampleDouble(x, y),
-                        bt8600Tile.getSampleDouble(x, y));
+                                                                       bt8600Tile.getSampleDouble(x, y));
                 break;
             case MetImageConstants.MEASURE_NEW_5:
                 measure = ModisMeasures.newMeasurePositiveBT37minusBT11Day06Glint(bt3700Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y),
-                        rho600Tile.getSampleDouble(x, y));
+                                                                                  bt11000Tile.getSampleDouble(x, y),
+                                                                                  rho600Tile.getSampleDouble(x, y));
                 break;
             case MetImageConstants.MEASURE_NEW_6:
                 measure = ModisMeasures.newMeasureO2Absorption(Double.NaN);  // todo !
                 break;
             case MetImageConstants.MEASURE_NEW_7:
                 measure = ModisMeasures.newMeasureUniformityTwoChannels(Double.NaN, Double.NaN,        // todo !
-                        rho600Tile.getSampleDouble(x, y),
-                        isSampleNight(daytimeTile, x, y));
+                                                                        rho600Tile.getSampleDouble(x, y),
+                                                                        isSampleNight(daytimeTile, x, y));
                 break;
             default:
                 throw new OperatorException("invalid measure ID " + measureId + " - cannot proceed.");

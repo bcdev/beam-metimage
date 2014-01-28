@@ -1,18 +1,12 @@
 package org.esa.beam.metimage.operator;
 
-import util.MetImageUtils;
-
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 24.01.14
- * Time: 15:51
+ * Container holding a MODIS sample with an ID and arrays with 'cloud' and 'noCloud' samples
  *
- * @author olafd
+ * @author Marco Zuehlke, Olaf Danne
  */
 public class ModisSample {
     private int measureID;
-    private String bandName;
     private double[] cloudSamples;
     private double[] noCloudSamples;
 
@@ -22,14 +16,6 @@ public class ModisSample {
 
     public int getMeasureID() {
         return measureID;
-    }
-
-    public String getBandName() {
-        return bandName;
-    }
-
-    public void setBandName(String bandName) {
-        this.bandName = bandName;
     }
 
     public double[] getCloudSamples() {

@@ -8,7 +8,6 @@ import org.esa.beam.util.math.IndexValidator;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class DistinctionSkillTest {
@@ -260,6 +259,6 @@ public class DistinctionSkillTest {
                 DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(histo1, histo2, 100, 200);
 
         System.out.println("distSkillRandom = " + distSkillRandom);
-        assertEquals(0.0, distSkillRandom, 2.E-2);   // we get a skill of about 0.015, which should be ok
+        assertEquals(0.0, distSkillRandom, 5.E-2);   // we get a skill of about 0.015, which should be ok
     }
 }

@@ -1,7 +1,8 @@
 package org.esa.beam.metimage.math;
 
 import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.core.SubProgressMonitor;
+import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
+import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Min;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
@@ -10,6 +11,7 @@ import org.esa.beam.util.Guardian;
 import org.esa.beam.util.math.Histogram;
 import org.esa.beam.util.math.IndexValidator;
 import org.esa.beam.util.math.Range;
+import util.MetImageUtils;
 
 import java.util.Arrays;
 
@@ -41,11 +43,50 @@ public class MetImageHistogram extends Histogram {
         computeEqualBinBorders();
     }
 
-    private void computeEqualBinBorders() {
-        equalBinBorders = new float[pdf.length + 1];
-        for (int i = 0; i < equalBinBorders.length; i++) {
-            equalBinBorders[i] = (float) getMin() + i * ((float) getMax() - (float) getMin()) / (equalBinBorders.length - 1);
+    public static MetImageHistogram createAggregatedHistogram(double[] samples, int numberOfBins, double min, double max) {
+        MetImageHistogram cloudHisto;
+        cloudHisto = new MetImageHistogram(new int[numberOfBins],
+                                           min, max,
+                                           MetImageConstants.ALPHA);
+        cloudHisto.aggregate(samples, false, IndexValidator.TRUE, ProgressMonitor.NULL);
+        cloudHisto.computeDensityFunctions();
+        return cloudHisto;
+    }
+
+    public static MetImageHistogram createAggregatedEqualizedHistogram(double[] srcSamples) {
+
+        int nBins = MetImageHistogram.findOptimalNumberOfBins(srcSamples);
+
+        // first get a 'normal' histo with 1000 equally spaced bins...
+        final double maxSrcSamples = (new Max()).evaluate(srcSamples);
+        final double minSrcSamples = (new Min()).evaluate(srcSamples);
+        final MetImageHistogram equalSpacedBinsHisto = new MetImageHistogram(new int[1000],
+                                                                             minSrcSamples,
+                                                                             maxSrcSamples,
+                                                                             MetImageConstants.ALPHA);
+        equalSpacedBinsHisto.aggregate(srcSamples, false, IndexValidator.TRUE, ProgressMonitor.NULL);
+        equalSpacedBinsHisto.computeDensityFunctions();
+
+        LinearInterpolator interpolator = new LinearInterpolator();
+        final PolynomialSplineFunction equalBinsHistoPsf = interpolator.interpolate(MetImageUtils.getAsDoubles(equalSpacedBinsHisto.getCdf()),
+                                                                                    MetImageUtils.getAsDoubles(equalSpacedBinsHisto.getEqualBinBorders()));
+
+        double[] equalSpacedBins = new double[nBins];
+        double[] unequalSpacedBins = new double[nBins];
+        for (int i = 0; i < unequalSpacedBins.length; i++) {
+            equalSpacedBins[i] = i * 1.0 / (unequalSpacedBins.length - 1);
+            unequalSpacedBins[i] = equalBinsHistoPsf.value(equalSpacedBins[i]);
         }
+
+        // now get the equalized histogram which has unequal spaced bins...
+        final MetImageHistogram equalizedHistogram = new MetImageHistogram(new int[nBins - 1],
+                                                                           minSrcSamples, maxSrcSamples,
+                                                                           MetImageConstants.ALPHA);
+        equalizedHistogram.setUnequalBinBorders(unequalSpacedBins);
+        equalizedHistogram.aggregateUnequalBins(srcSamples, IndexValidator.TRUE);
+        equalizedHistogram.computeDensityFunctions();
+
+        return equalizedHistogram;
     }
 
     public float[] getEqualBinBorders() {
@@ -89,20 +130,22 @@ public class MetImageHistogram extends Histogram {
         return (int) Math.ceil((maxB - minB) / h);
     }
 
-    public void aggregateUnequalBins(final double[] values,
-                                     final IndexValidator validator,
-                                     ProgressMonitor pm) {
+    public void aggregateUnequalBins(final double[] values, final IndexValidator validator) {
         Guardian.assertNotNull("validator", validator);
-        final Histogram histogram = computeHistogramUnequalBins(values, getUnequalBinBorders(), validator,
-                getNumBins(), new Range(getMin(), getMax()),
-                null, pm);
-        final int[] newCounts = histogram.getBinCounts();
+        final int[] newCounts = computeUnequalBins(values, getUnequalBinBorders(), validator,
+                                                   getNumBins(), new Range(getMin(), getMax()));
         final int[] thisCounts = getBinCounts();
         for (int i = 0; i < thisCounts.length; i++) {
             thisCounts[i] += newCounts[i];
         }
     }
 
+    private void computeEqualBinBorders() {
+        equalBinBorders = new float[pdf.length + 1];
+        for (int i = 0; i < equalBinBorders.length; i++) {
+            equalBinBorders[i] = (float) getMin() + i * ((float) getMax() - (float) getMin()) / (equalBinBorders.length - 1);
+        }
+    }
 
     private void computePdf() {
         for (int i = 0; i < getBinCounts().length; i++) {
@@ -135,55 +178,36 @@ public class MetImageHistogram extends Histogram {
         return sum;
     }
 
-    private Histogram computeHistogramUnequalBins(final double[] values,
-                                                  double[] binBorders,
-                                                  final IndexValidator validator,
-                                                  final int numBins,
-                                                  Range range,
-                                                  Histogram histogram,
-                                                  ProgressMonitor pm) {
+    private int[] computeUnequalBins(final double[] values,
+                                     double[] binBorders,
+                                     final IndexValidator validator,
+                                     final int numBins,
+                                     Range range) {
         Guardian.assertNotNull("validator", validator);
         final int numValues = values.length;
         final int[] binVals = new int[numBins];
-        pm.beginTask("Computing histogram", range == null ? 2 : 1);
-        try {
-            if (range == null) {
-                range = computeRangeDouble(values, validator, range, SubProgressMonitor.create(pm, 1));
-            }
-            final double min = range.getMin();
-            final double max = range.getMax();
-            double value;
-            int binIndex;
-            ProgressMonitor subPm = SubProgressMonitor.create(pm, 1);
-            subPm.beginTask("Computing histogram", numValues);
-            try {
-                for (int i = 0; i < numValues; i++) {
-                    if (validator.validateIndex(i)) {
-                        value = values[i];
-                        if (!Double.isNaN(value) && !Double.isInfinite(value)) {
-                            if (value >= min && value <= max) {
-                                binIndex = findUnequalBinIndex(value, binBorders);
-                                if (binIndex == numBins) {
-                                    binIndex = numBins - 1;
-                                }
-                                binVals[binIndex]++;
-                            }
-                        }
-                    }
-                    subPm.worked(1);
-                }
-            } finally {
-                subPm.done();
-            }
-            if (histogram != null) {
-                histogram.setBinCounts(binVals, min, max);
-            } else {
-                histogram = new Histogram(binVals, min, max);
-            }
-        } finally {
-            pm.done();
+        if (range == null) {
+            range = computeRangeDouble(values, validator, range, null);
         }
-        return histogram;
+        final double min = range.getMin();
+        final double max = range.getMax();
+        double value;
+        int binIndex;
+        for (int i = 0; i < numValues; i++) {
+            if (validator.validateIndex(i)) {
+                value = values[i];
+                if (!Double.isNaN(value) && !Double.isInfinite(value)) {
+                    if (value >= min && value <= max) {
+                        binIndex = findUnequalBinIndex(value, binBorders);
+                        if (binIndex == numBins) {
+                            binIndex = numBins - 1;
+                        }
+                        binVals[binIndex]++;
+                    }
+                }
+            }
+        }
+        return binVals;
     }
 
     private int findUnequalBinIndex(double value, double[] binBorders) {
