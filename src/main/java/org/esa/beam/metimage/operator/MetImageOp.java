@@ -18,6 +18,10 @@ import org.esa.beam.metimage.math.MetImageHistogram;
 import org.esa.beam.util.math.IndexValidator;
 import util.MetImageUtils;
 
+import javax.media.jai.Interpolation;
+import javax.media.jai.RenderedOp;
+import javax.media.jai.operator.ScaleDescriptor;
+import javax.media.jai.operator.SubtractDescriptor;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,15 +71,26 @@ public class MetImageOp extends Operator {
     private Tile bt8600Tile;
     private Tile bt11000Tile;
     private Tile bt12000Tile;
+
+    private Tile diffBt11Bt3700Tile3x3;
+    private Tile bt11000Tile3x3;
+    private Tile rho600Tile3x3;
+
     private Rectangle sampleRect;
 
 
     @Override
     public void initialize() throws OperatorException {
-
+        System.out.println("entering initialize...");
         width = sourceProduct.getSceneRasterWidth();
         height = sourceProduct.getSceneRasterHeight();
 
+        width = 540;
+        height = 1000;
+
+//        sourceProduct.setPreferredTileSize(30, 30);
+//        sourceProduct.setPreferredTileSize(width, height);
+//        sourceProduct.setPreferredTileSize(540, 1000);
         getSourceTiles();
 
         ModisSample heritage1Sample = getModisSample(MetImageConstants.MEASURE_HERITAGE_1);
@@ -92,7 +107,7 @@ public class MetImageOp extends Operator {
         ModisSample new4Sample = getModisSample(MetImageConstants.MEASURE_NEW_4);
         ModisSample new5Sample = getModisSample(MetImageConstants.MEASURE_NEW_5);
         ModisSample new6Sample = getModisSample(MetImageConstants.MEASURE_NEW_6);
-        ModisSample new7Sample = getModisSample(MetImageConstants.MEASURE_NEW_7);
+//        ModisSample new7Sample = getModisSample(MetImageConstants.MEASURE_NEW_7);
 
         final double distSkillHeritage1 = getDistinctionSkill(heritage1Sample);
         final double distSkillHeritage2 = getDistinctionSkill(heritage2Sample);
@@ -108,7 +123,7 @@ public class MetImageOp extends Operator {
         final double distSkillNew4 = getDistinctionSkill(new4Sample);
         final double distSkillNew5 = getDistinctionSkill(new5Sample);
         final double distSkillNew6 = getDistinctionSkill(new6Sample);
-        final double distSkillNew7 = getDistinctionSkill(new7Sample);
+//        final double distSkillNew7 = getDistinctionSkill(new7Sample);
 
         // todo: define a format for output product
         System.out.println("distSkillHeritage1 = " + distSkillHeritage1);
@@ -125,9 +140,10 @@ public class MetImageOp extends Operator {
         System.out.println("distSkillNew4 = " + distSkillNew4);
         System.out.println("distSkillNew5 = " + distSkillNew5);
         System.out.println("distSkillNew6 = " + distSkillNew6);
-        System.out.println("distSkillNew7 = " + distSkillNew7);
+//        System.out.println("distSkillNew7 = " + distSkillNew7);
 
         setTargetProduct(new Product("dummy", "dummy", 0, 0));
+        System.out.println("leaving initialize.");
     }
 
     private void getSourceTiles() {
@@ -146,7 +162,14 @@ public class MetImageOp extends Operator {
         final Band bt12000Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_BT12000_BAND_NAME);
 
         sampleRect = new Rectangle(width, height);
+//        sampleRect = new Rectangle(sourceProduct.getPreferredTileSize().width,
+//                                   sourceProduct.getPreferredTileSize().height);
+        System.out.println("width,height = " + width + "," + height);
+
+        final long t1 = System.currentTimeMillis();
         surfaceTypeTile = getSourceTile(surfaceTypeBand, sampleRect);
+        final long t2 = System.currentTimeMillis();
+        System.out.println("getSourceTile(surfaceTypeBand, sampleRect) took " + (t2 - t1) + " ms");
         daytimeTile = getSourceTile(daytimeBand, sampleRect);
         rho600Tile = getSourceTile(rho600Band, sampleRect);
         rho860Tile = getSourceTile(rho860Band, sampleRect);
@@ -156,7 +179,50 @@ public class MetImageOp extends Operator {
         bt8600Tile = getSourceTile(bt8600Band, sampleRect);
         bt11000Tile = getSourceTile(bt11000Band, sampleRect);
         bt12000Tile = getSourceTile(bt12000Band, sampleRect);
+
+        bt11000Tile3x3 = get3x3Tile(bt11000Band);
+        diffBt11Bt3700Tile3x3 = get3x3DiffTile(bt11000Band, bt3700Band);
+        rho600Tile3x3 = get3x3Tile(rho600Band);
+
+        final long t3 = System.currentTimeMillis();
+        System.out.println("getSourceTile(*, sampleRect) took " + (t3 - t1) + " ms");
     }
+
+    private Band get3x3Band(Band srcBand) {
+        final int scaleWidth = width / 3;
+        final int scaleHeight = height / 3;
+        Band target3x3Band = new Band(srcBand.getName() + "_3x3", srcBand.getDataType(), scaleWidth, scaleHeight);
+        RenderedOp downscaledImage = ScaleDescriptor.create(srcBand.getSourceImage(),
+                                                            1.0f / 3.0f,
+                                                            1.0f / 3.0f,
+                                                            0.0f, 0.0f,
+                                                            Interpolation.getInstance(
+                                                                    Interpolation.INTERP_NEAREST), null);
+        target3x3Band.setSourceImage(downscaledImage);
+        return target3x3Band;
+    }
+
+    private Tile get3x3Tile(Band srcBand) {
+        Band target3x3Band = get3x3Band(srcBand);
+        return getSourceTile(target3x3Band, new Rectangle(target3x3Band.getSceneRasterWidth(),
+                                                          target3x3Band.getSceneRasterHeight()));
+    }
+
+    private Tile get3x3DiffTile(Band srcBand1, Band srcBand2) {
+        Band target3x3Band1 = get3x3Band(srcBand1);
+        Band target3x3Band2 = get3x3Band(srcBand2);
+        final int scaleWidth = width / 3;
+        final int scaleHeight = height / 3;
+
+        RenderedOp diffImage = SubtractDescriptor.create(target3x3Band1.getSourceImage(),
+                                                         target3x3Band2.getSourceImage(), null);
+
+        Band target3x3DiffBand = new Band("diff_" + target3x3Band1.getName() + "_" + target3x3Band2.getName(),
+                                          target3x3Band1.getDataType(), scaleWidth, scaleHeight);
+        target3x3DiffBand.setSourceImage(diffImage);
+        return getSourceTile(target3x3DiffBand, new Rectangle(scaleWidth, scaleHeight));
+    }
+
 
     private double getDistinctionSkill(ModisSample modisSample) {
         final double[] cloudSamples = modisSample.getCloudSamples();
@@ -181,18 +247,26 @@ public class MetImageOp extends Operator {
             final double[] allSamples = mergeSamples(cloudSamples, numCloud, noCloudSamples, numNoCloud);
             final int nBins = MetImageHistogram.findOptimalNumberOfBins(allSamples);
             if (nBins > 0) {
-                final MetImageHistogram allSamplesEqualizedHisto = MetImageHistogram.createAggregatedEqualizedHistogram(allSamples);
-                final double[] unequalBins = allSamplesEqualizedHisto.getUnequalBinBorders();
+                try {
+                    final MetImageHistogram allSamplesEqualizedHisto = MetImageHistogram.createAggregatedEqualizedHistogram(allSamples);
+                    final double[] unequalBins = allSamplesEqualizedHisto.getUnequalBinBorders();
 
-                // now get the unequal spaced cloud and noCloudhistograms...
-                cloudHisto = new MetImageHistogram(new int[unequalBins.length - 1], min, max, MetImageConstants.ALPHA);
-                cloudHisto.setUnequalBinBorders(unequalBins);
-                cloudHisto.aggregateUnequalBins(cloudSamples, IndexValidator.TRUE);
-                cloudHisto.computeDensityFunctions();
-                noCloudHisto = new MetImageHistogram(new int[unequalBins.length - 1], min, max, MetImageConstants.ALPHA);
-                noCloudHisto.setUnequalBinBorders(unequalBins);
-                noCloudHisto.aggregateUnequalBins(noCloudSamples, IndexValidator.TRUE);
-                noCloudHisto.computeDensityFunctions();
+                    // now get the unequal spaced cloud and noCloudhistograms...
+                    cloudHisto = new MetImageHistogram(new int[unequalBins.length - 1], min, max, MetImageConstants.ALPHA);
+                    cloudHisto.setUnequalBinBorders(unequalBins);
+                    cloudHisto.aggregateUnequalBins(cloudSamples, IndexValidator.TRUE);
+                    cloudHisto.computeDensityFunctions();
+                    noCloudHisto = new MetImageHistogram(new int[unequalBins.length - 1], min, max, MetImageConstants.ALPHA);
+                    noCloudHisto.setUnequalBinBorders(unequalBins);
+                    noCloudHisto.aggregateUnequalBins(noCloudSamples, IndexValidator.TRUE);
+                    noCloudHisto.computeDensityFunctions();
+                } catch (Exception e) {
+                    System.out.println("Cannot perform equalization for measure ID '" + modisSample.getMeasureID() +
+                                               "': " + e.getMessage());
+                    System.out.println(" --> compute distinction skill without equalization.");
+                    cloudHisto = MetImageHistogram.createAggregatedHistogram(cloudSamples, numberOfBins, min, max);
+                    noCloudHisto = MetImageHistogram.createAggregatedHistogram(noCloudSamples, numberOfBins, min, max);
+                }
             } else {
                 System.out.println("Cannot perform equalization for measure ID '" + modisSample.getMeasureID() +
                                            "' (no valid bins found) - compute distinction skill without equalization.");
@@ -225,13 +299,27 @@ public class MetImageOp extends Operator {
         List<Double> cloudSampleList = new ArrayList<Double>();
         List<Double> noCloudSampleList = new ArrayList<Double>();
 
-        for (int y = sampleRect.y; y < sampleRect.y + sampleRect.height; y++) {
-            for (int x = sampleRect.x; x < sampleRect.x + sampleRect.width; x++) {
-                final double measure = getMeasureById(measureId, y, x);
-                if (isSampleCloudy(surfaceTypeTile, x, y)) {
-                    cloudSampleList.add(measure);
-                } else {
-                    noCloudSampleList.add(measure);
+        if (measureId == MetImageConstants.MEASURE_NEW_7) {
+            final Rectangle sampleRect3x3 = new Rectangle(sampleRect.width / 3, sampleRect.height / 3);
+            for (int y = sampleRect3x3.y; y < sampleRect3x3.y + sampleRect3x3.height; y++) {
+                for (int x = sampleRect3x3.x; x < sampleRect3x3.x + sampleRect3x3.width; x++) {
+                    final double measure = getMeasureById(measureId, y, x);
+                    if (isSampleCloudy(surfaceTypeTile, x, y)) {
+                        cloudSampleList.add(measure);
+                    } else {
+                        noCloudSampleList.add(measure);
+                    }
+                }
+            }
+        } else {
+            for (int y = sampleRect.y; y < sampleRect.y + sampleRect.height; y++) {
+                for (int x = sampleRect.x; x < sampleRect.x + sampleRect.width; x++) {
+                    final double measure = getMeasureById(measureId, y, x);
+                    if (isSampleCloudy(surfaceTypeTile, x, y)) {
+                        cloudSampleList.add(measure);
+                    } else {
+                        noCloudSampleList.add(measure);
+                    }
                 }
             }
         }
@@ -303,8 +391,9 @@ public class MetImageOp extends Operator {
                 measure = ModisMeasures.newMeasureO2Absorption(Double.NaN);  // todo !
                 break;
             case MetImageConstants.MEASURE_NEW_7:
-                measure = ModisMeasures.newMeasureUniformityTwoChannels(Double.NaN, Double.NaN,        // todo !
-                                                                        rho600Tile.getSampleDouble(x, y),
+                measure = ModisMeasures.newMeasureUniformityTwoChannels(bt11000Tile.getSampleDouble(x, y),
+                                                                        diffBt11Bt3700Tile3x3.getSampleDouble(x, y),        // todo !
+                                                                        rho600Tile3x3.getSampleDouble(x, y),
                                                                         isSampleNight(daytimeTile, x, y));
                 break;
             default:

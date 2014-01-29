@@ -55,4 +55,28 @@ public class ModisMeasuresTest {
         assertEquals(1.2, ModisMeasures.newMeasureUniformityTwoChannels(bt11Sample3x3, diffBt11Bt37Sample3x3, rho600, false), 1.E-6); // todo: define 'combine' // bt11Sample3x3 * rho600
     }
 
+    @Test
+    public void testConvertModisEmissiveRadianceToTemperature() {
+        // this test follows Python test 'test_it()' in modis_l1b.py provided by RP
+        int bandnumber = 20;  // 3785nm
+        double radiance = 0.388822; //  W/(m2 sr um)
+        assertEquals(294.72, ModisMeasures.convertModisEmissiveRadianceToTemperature(radiance, bandnumber), 1.E-2);
+
+        bandnumber = 24;  // 4472nm
+        radiance = 0.834006; //  W/(m2 sr um)
+        assertEquals(284.96, ModisMeasures.convertModisEmissiveRadianceToTemperature(radiance, bandnumber), 1.E-2);
+
+        bandnumber = 27;  // 6766nm
+        radiance = 3.683158; //  W/(m2 sr um)
+        assertEquals(274.92, ModisMeasures.convertModisEmissiveRadianceToTemperature(radiance, bandnumber), 1.E-2);
+
+        bandnumber = 31;  // 11012nm
+        radiance = 4.405360; //  W/(m2 sr um)
+        assertEquals(254.98, ModisMeasures.convertModisEmissiveRadianceToTemperature(radiance, bandnumber), 1.E-2);
+
+        bandnumber = 36;  // 14193nm
+        radiance = 4.61078; //  W/(m2 sr um)
+        assertEquals(265.0, ModisMeasures.convertModisEmissiveRadianceToTemperature(radiance, bandnumber), 1.E-2);
+    }
+
 }

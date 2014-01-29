@@ -45,13 +45,8 @@ public class DistinctionSkill {
 
         checkHistogramDimensions(nPdfa, nPdfb, nBins);
 
-        double[] cdfa = new double[nPdfa+1];
-        double[] cdfb = new double[nPdfb+1];
-        final int nCdfa = cdfa.length;
-        final int nCdfb = cdfb.length;
-
-        MetImageUtils.getCumulativeSumAndNormalize(pdfa, cdfa, nCdfa);
-        MetImageUtils.getCumulativeSumAndNormalize(pdfb, cdfb, nCdfb);
+        double[] cdfa = MetImageUtils.getCumulativeSumAndNormalize(pdfa);
+        double[] cdfb = MetImageUtils.getCumulativeSumAndNormalize(pdfb);
 
         return computeDistinctionSkillFromCramerMisesAndersonMetric(pdfa, pdfb, cdfa, cdfb, bins, numA, numB);
     }

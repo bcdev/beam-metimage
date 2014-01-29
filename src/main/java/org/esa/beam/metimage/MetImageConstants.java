@@ -10,7 +10,7 @@ public class MetImageConstants {
     public static final int NUM_BINS = 20;
     public static final int NUM_QUANTILES = 100000;
 
-    public static final int ALPHA = 1;
+    public static final int ALPHA = 10;
 
     public static final String MODIS_CSV_PRODUCT_CLOUD_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
     public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
