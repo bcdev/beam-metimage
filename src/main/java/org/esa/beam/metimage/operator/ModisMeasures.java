@@ -34,6 +34,7 @@ public class ModisMeasures {
     // heritage 2/7
     public static double heritageMeasureSplitWindow(double bt11000, double bt12000) {
         return bt11000 - bt12000;
+//        return bt11000;  // test!! todo remove
     }
 
     // heritage 3/7
@@ -61,11 +62,11 @@ public class ModisMeasures {
     }
 
     // heritage 6/7
-    public static double heritageMeasureSolarBrightnessThresholdsLand(double rho600, boolean isLand) {
-        if (isLand) {
-            return rho600;
-        } else {
+    public static double heritageMeasureSolarBrightnessThresholdsLand(double rho600, boolean isOcean) {
+        if (isOcean) {
             return Double.NaN;
+        } else {
+            return rho600;
         }
     }
 
@@ -134,11 +135,11 @@ public class ModisMeasures {
                 MetImageConstants.BOLTZMANN_CONSTANT;
 
         // use metres in units:
-        final double wvlMetres = MetImageConstants.MODIS_EMISSIVE_WAVELENGTHS[wvlIndex]/1.E9;  // input is in microns!
-        final double radMetres = radiance*1.E6;
+        final double wvlMetres = MetImageConstants.MODIS_EMISSIVE_WAVELENGTHS[wvlIndex] / 1.E9;  // input is in microns!
+        final double radMetres = radiance * 1.E6;
 
-        double temperature = c2 / (wvlMetres * Math.log(c1/(radMetres*Math.pow(wvlMetres, 5.0)) + 1.0));
-        temperature = (temperature - MetImageConstants.TCI[wvlIndex])/MetImageConstants.TCS[wvlIndex];
+        double temperature = c2 / (wvlMetres * Math.log(c1 / (radMetres * Math.pow(wvlMetres, 5.0)) + 1.0));
+        temperature = (temperature - MetImageConstants.TCI[wvlIndex]) / MetImageConstants.TCS[wvlIndex];
 
         return temperature;
     }

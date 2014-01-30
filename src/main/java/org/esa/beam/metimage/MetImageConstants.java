@@ -10,11 +10,13 @@ public class MetImageConstants {
     public static final int NUM_BINS = 20;
     public static final int NUM_QUANTILES = 100000;
 
-    public static final int ALPHA = 10;
+    public static final int ALPHA = 1;
 
     public static final String MODIS_CSV_PRODUCT_CLOUD_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
     public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
     public static final String MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME = "CLOUD_HEIGHT_ID";
+    public static final String MODIS_CSV_PRODUCT_LATITUDE_BAND_NAME = "Latitude";
+    public static final String MODIS_CSV_PRODUCT_LONGITUDE_BAND_NAME = "Longitude";
 
     public static final String MODIS_CSV_PRODUCT_RHO600_BAND_NAME = "EV_1KM_RefSB_13lo";
     public static final String MODIS_CSV_PRODUCT_RHO860_BAND_NAME = "EV_1KM_RefSB_16";
