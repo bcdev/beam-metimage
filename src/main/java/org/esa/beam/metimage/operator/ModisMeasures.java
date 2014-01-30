@@ -110,9 +110,9 @@ public class ModisMeasures {
     }
 
     // new 6/7
-    // todo: take Idepix scaling height
-    public static double newMeasureO2Absorption(double scalingHeight) {
-        return scalingHeight;
+    public static double newMeasureO2Absorption(int cloudHeightID) {
+        // first guess: we don't have anything better than this
+        return MetImageConstants.cloudHeights[cloudHeightID];
     }
 
     // new 7/7
@@ -145,7 +145,7 @@ public class ModisMeasures {
 
 
     private static double combine(double A, double B) {
-        return A * B; // todo: define this measure
+        return A * B; // todo: RP to define this measure
     }
 
 }

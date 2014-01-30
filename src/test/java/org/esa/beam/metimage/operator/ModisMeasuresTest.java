@@ -41,7 +41,8 @@ public class ModisMeasuresTest {
         assertTrue(Double.isNaN(ModisMeasures.newMeasureCO2()));                                        // NaN (ocean test)
         assertEquals(-8.25, ModisMeasures.newMeasureBT37minusBT87Deserts(bt3700, bt8600), 1.E-6);                     // bt3700 - bt8600
         assertEquals(-112.5, ModisMeasures.newMeasurePositiveBT37minusBT11Day06Glint(bt3700, bt11000, rho600), 1.E-6);         // (bt3700 - bt11000) / rho600
-        assertEquals(0.0, ModisMeasures.newMeasureO2Absorption(0.0), 1.E-6);    // todo: fill method       // 0.0
+        assertEquals(0.0, ModisMeasures.newMeasureO2Absorption(0), 1.E-6);
+        assertEquals(6000.0, ModisMeasures.newMeasureO2Absorption(2), 1.E-6);
         assertEquals(108.0, ModisMeasures.newMeasureUniformityTwoChannels(bt11Sample3x3, diffBt11Bt37Sample3x3, rho600, true), 1.E-6); // todo: define 'combine' // bt11Sample3x3 * diffBt11Bt37Sample3x3
 
         // at night, over ocean:

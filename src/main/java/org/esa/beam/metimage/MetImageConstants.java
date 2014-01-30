@@ -14,6 +14,7 @@ public class MetImageConstants {
 
     public static final String MODIS_CSV_PRODUCT_CLOUD_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
     public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
+    public static final String MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME = "CLOUD_HEIGHT_ID";
 
     public static final String MODIS_CSV_PRODUCT_RHO600_BAND_NAME = "EV_1KM_RefSB_13lo";
     public static final String MODIS_CSV_PRODUCT_RHO860_BAND_NAME = "EV_1KM_RefSB_16";
@@ -106,4 +107,12 @@ public class MetImageConstants {
             14193.7   // band 36
     };
 
+    public static final double[] cloudHeights = new double[]{
+            0.0,    //    0	  UNKNOWN
+            3000.0,    //    1    low (<3km)
+            6000.0,    //    2    middle (3-6km)
+            9000.0     //    3    high (>6km)
+    };
+
+    public static final double TSKIN_DEFAULT = 288.0;
 }

@@ -130,7 +130,11 @@ public class MetImageHistogram extends Histogram {
         final double maxB = (new Max()).evaluate(b);
         final double minB = (new Min()).evaluate(b);
 
-        return (int) Math.ceil((maxB - minB) / h);
+        if (h > 0 && maxB > minB) {
+            return (int) Math.ceil((maxB - minB) / h);
+        } else {
+            return -1;
+        }
     }
 
     public void aggregateUnequalBins(final double[] values, final IndexValidator validator) {

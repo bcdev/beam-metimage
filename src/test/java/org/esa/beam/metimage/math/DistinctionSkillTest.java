@@ -225,7 +225,7 @@ public class DistinctionSkillTest {
         final double distSkillRho860 =
                 DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(noCloudHisto, cloudHisto, numNoCloud, numCloud);
 
-        assertEquals(1.0, distSkillRho860, 1.E-2);
+        assertEquals(1.0, distSkillRho860, 5.E-2);
         System.out.println("distSkillRho860 = " + distSkillRho860);
     }
 
