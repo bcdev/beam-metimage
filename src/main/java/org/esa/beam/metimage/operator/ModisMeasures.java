@@ -28,18 +28,25 @@ public class ModisMeasures {
 
     // heritage 1/7
     public static double heritageMeasureBT11(double bt11000, double tSkin) {
-        return convertModisEmissiveRadianceToTemperature(bt11000, 31) - tSkin;
+        if (bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
+            return convertModisEmissiveRadianceToTemperature(bt11000, 31) - tSkin;
+        } else {
+            return Double.NaN;
+        }
     }
 
     // heritage 2/7
     public static double heritageMeasureSplitWindow(double bt11000, double bt12000) {
-        return bt11000 - bt12000;
-//        return bt11000;  // test!! todo remove
+        if (bt11000 < MetImageConstants.UPPER_LIM_BT11000 && bt12000 < MetImageConstants.UPPER_LIM_BT12000) {
+            return bt11000 - bt12000;
+        } else {
+            return Double.NaN;
+        }
     }
 
     // heritage 3/7
     public static double heritageMeasureNegativeBT37minusBT11Night(double bt3700, double bt11000, boolean isNight) {
-        if (isNight) {
+        if (isNight && bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
             return bt3700 - bt11000;
         } else {
             return Double.NaN;
@@ -54,7 +61,7 @@ public class ModisMeasures {
 
     // heritage 5/7
     public static double heritageMeasureSolarBrightnessThresholdsOcean(double rho860, boolean isLand) {
-        if (isLand) {
+        if (isLand || rho860 >= MetImageConstants.UPPER_LIM_RHO860) {
             return Double.NaN;
         } else {
             return rho860;
@@ -63,7 +70,7 @@ public class ModisMeasures {
 
     // heritage 6/7
     public static double heritageMeasureSolarBrightnessThresholdsLand(double rho600, boolean isOcean) {
-        if (isOcean) {
+        if (isOcean || rho600 >= MetImageConstants.UPPER_LIM_RHO600) {
             return Double.NaN;
         } else {
             return rho600;
@@ -82,15 +89,27 @@ public class ModisMeasures {
 
     // new 1/7
     public static double newMeasureR138WaterVapour(double rho1380) {
-        return rho1380;
+        if (rho1380 > 0.0 && rho1380 < MetImageConstants.UPPER_LIM_RHO1380) {
+            return rho1380;
+        } else {
+            return Double.NaN;
+        }
     }
 
     // new 2/7
     public static double newMeasureBT11(double bt7300, double bt8600, double bt11000, boolean isLand) {
         if (isLand) {
-            return bt7300 - bt8600;
+            if (bt7300 < MetImageConstants.UPPER_LIM_BT7300 && bt8600 < MetImageConstants.UPPER_LIM_BT8600) {
+                return bt7300 - bt8600;
+            } else {
+                return Double.NaN;
+            }
         } else {
-            return bt7300 - bt11000;
+            if (bt7300 < MetImageConstants.UPPER_LIM_BT7300 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
+                return bt7300 - bt11000;
+            } else {
+                return Double.NaN;
+            }
         }
     }
 
@@ -102,12 +121,21 @@ public class ModisMeasures {
 
     // new 4/7
     public static double newMeasureBT37minusBT87Deserts(double bt3700, double bt8600) {
-        return bt3700 - bt8600;
+        if (bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt8600 < MetImageConstants.UPPER_LIM_BT8600) {
+            return bt3700 - bt8600;
+        } else {
+            return Double.NaN;
+        }
     }
 
     // new 5/7
     public static double newMeasurePositiveBT37minusBT11Day06Glint(double bt3700, double bt11000, double rho600) {
-        return (bt3700 - bt11000) / rho600;
+        if (bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt11000 < MetImageConstants.UPPER_LIM_BT11000 &&
+                rho600 < MetImageConstants.UPPER_LIM_RHO600) {
+            return (bt3700 - bt11000) / rho600;
+        } else {
+            return Double.NaN;
+        }
     }
 
     // new 6/7

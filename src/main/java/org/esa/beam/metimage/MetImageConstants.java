@@ -10,7 +10,7 @@ public class MetImageConstants {
     public static final int NUM_BINS = 20;
     public static final int NUM_QUANTILES = 100000;
 
-    public static final int ALPHA = 1;
+    public static final int ALPHA = 100;
 
     public static final String MODIS_CSV_PRODUCT_CLOUD_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
     public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
@@ -117,4 +117,15 @@ public class MetImageConstants {
     };
 
     public static final double TSKIN_DEFAULT = 288.0;
+
+    public static final double UPPER_LIM_RHO600 = 0.125;
+    public static final double UPPER_LIM_RHO860 = 0.175;
+    public static final double UPPER_LIM_RHO1380 = 1.0;
+
+    public static final double UPPER_LIM_BT3700 = 2.0;
+    public static final double UPPER_LIM_BT7300 = 5.0;
+    public static final double UPPER_LIM_BT8600 = 15.0;
+    public static final double UPPER_LIM_BT11000 = 15.0;
+    public static final double UPPER_LIM_BT12000 = 15.0;
+
 }
