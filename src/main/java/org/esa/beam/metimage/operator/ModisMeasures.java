@@ -38,7 +38,8 @@ public class ModisMeasures {
     // heritage 2/7
     public static double heritageMeasureSplitWindow(double bt11000, double bt12000) {
         if (bt11000 < MetImageConstants.UPPER_LIM_BT11000 && bt12000 < MetImageConstants.UPPER_LIM_BT12000) {
-            return bt11000 - bt12000;
+            return convertModisEmissiveRadianceToTemperature(bt11000, 31) -
+                    convertModisEmissiveRadianceToTemperature(bt12000, 32);
         } else {
             return Double.NaN;
         }
@@ -47,7 +48,8 @@ public class ModisMeasures {
     // heritage 3/7
     public static double heritageMeasureNegativeBT37minusBT11Night(double bt3700, double bt11000, boolean isNight) {
         if (isNight && bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
-            return bt3700 - bt11000;
+            return convertModisEmissiveRadianceToTemperature(bt3700, 20) -
+                    convertModisEmissiveRadianceToTemperature(bt11000, 31);
         } else {
             return Double.NaN;
         }
@@ -100,13 +102,15 @@ public class ModisMeasures {
     public static double newMeasureBT11(double bt7300, double bt8600, double bt11000, boolean isLand) {
         if (isLand) {
             if (bt7300 < MetImageConstants.UPPER_LIM_BT7300 && bt8600 < MetImageConstants.UPPER_LIM_BT8600) {
-                return bt7300 - bt8600;
+                return convertModisEmissiveRadianceToTemperature(bt7300, 28) -
+                        convertModisEmissiveRadianceToTemperature(bt8600, 29);
             } else {
                 return Double.NaN;
             }
         } else {
             if (bt7300 < MetImageConstants.UPPER_LIM_BT7300 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
-                return bt7300 - bt11000;
+                return convertModisEmissiveRadianceToTemperature(bt7300, 28) -
+                        convertModisEmissiveRadianceToTemperature(bt11000, 31);
             } else {
                 return Double.NaN;
             }
@@ -122,7 +126,8 @@ public class ModisMeasures {
     // new 4/7
     public static double newMeasureBT37minusBT87Deserts(double bt3700, double bt8600) {
         if (bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt8600 < MetImageConstants.UPPER_LIM_BT8600) {
-            return bt3700 - bt8600;
+            return convertModisEmissiveRadianceToTemperature(bt3700, 20) -
+                    convertModisEmissiveRadianceToTemperature(bt8600, 29);
         } else {
             return Double.NaN;
         }
@@ -132,7 +137,8 @@ public class ModisMeasures {
     public static double newMeasurePositiveBT37minusBT11Day06Glint(double bt3700, double bt11000, double rho600) {
         if (bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt11000 < MetImageConstants.UPPER_LIM_BT11000 &&
                 rho600 < MetImageConstants.UPPER_LIM_RHO600) {
-            return (bt3700 - bt11000) / rho600;
+            return (convertModisEmissiveRadianceToTemperature(bt3700, 20) -
+                    convertModisEmissiveRadianceToTemperature(bt11000, 31)) / rho600;
         } else {
             return Double.NaN;
         }

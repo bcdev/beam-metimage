@@ -347,7 +347,8 @@ public class MetImageOp extends Operator {
                     // take the mean of measures over 3x3 pixels
                     if (measureId == MetImageConstants.MEASURE_HERITAGE_7) {
                         if (bt11000Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT11000) {
-                            bt11000Mean3x3 += bt11000Tile.getSampleDouble(x, y);
+                            bt11000Mean3x3 +=
+                                    ModisMeasures.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31);
                             counter++;
                         }
                     } else {
@@ -355,8 +356,11 @@ public class MetImageOp extends Operator {
                                 bt3700Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT3700 &&
                                 bt11000Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT11000) {
                             rho600Mean3x3 += rho600Tile.getSampleDouble(x, y);
-                            bt11000Mean3x3 += bt11000Tile.getSampleDouble(x, y);
-                            bt11000Minus3700Mean3x3 += (bt11000Tile.getSampleDouble(x, y) - bt3700Tile.getSampleDouble(x, y));
+                            bt11000Mean3x3 +=
+                                    ModisMeasures.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31);
+                            bt11000Minus3700Mean3x3 +=
+                                    ModisMeasures.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31) -
+                                    ModisMeasures.convertModisEmissiveRadianceToTemperature(bt3700Tile.getSampleDouble(x, y), 20);
                             counter++;
                         }
                     }
