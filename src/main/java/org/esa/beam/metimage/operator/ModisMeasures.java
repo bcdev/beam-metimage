@@ -159,6 +159,26 @@ public class ModisMeasures {
         }
     }
 
+    // new 1/7 TEST
+    public static double newMeasureRhoSB_3_5_7(double rho469, double rho1240, double rho2130) {      // 469, 1240, 2130
+        if (rho469 > 0.0 && rho1240 > 0.0 && rho469 > rho2130 &&
+                rho469 < 2.0 && rho1240 < 2.0 && rho2130 < 1.0) {
+            return rho469 + rho1240 + rho2130;
+        } else {
+            return Double.NaN;
+        }
+    }
+
+    public static double newMeasureRhoSB_1_3_4(double rho645, double rho469, double rho555) {      // 469, 1240, 2130
+        if (rho645 > 0.0 && rho469 > 0.0 && rho469 > rho555 &&
+                rho645 < 3.0 && rho469 < 2.0 && rho555 < 2.0) {
+            return rho645 + rho469 + rho555;
+        } else {
+            return Double.NaN;
+        }
+    }
+
+
     public static double convertModisEmissiveRadianceToTemperature(double radiance, int emissiveBandNumber) {
 
         final int wvlIndex = emissiveBandNumber - 20;

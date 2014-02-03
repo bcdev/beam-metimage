@@ -27,6 +27,12 @@ public class MetImageConstants {
     public static final String MODIS_CSV_PRODUCT_BT11000_BAND_NAME = "EV_1KM_Emissive_31";
     public static final String MODIS_CSV_PRODUCT_BT12000_BAND_NAME = "EV_1KM_Emissive_32";
 
+    public static final String MODIS_CSV_PRODUCT_RHO645_BAND_NAME = "EV_250_Aggr1km_RefSB_1";
+    public static final String MODIS_CSV_PRODUCT_RHO469_BAND_NAME = "EV_500_Aggr1km_RefSB_3";
+    public static final String MODIS_CSV_PRODUCT_RHO555_BAND_NAME = "EV_500_Aggr1km_RefSB_4";
+    public static final String MODIS_CSV_PRODUCT_RHO1240_BAND_NAME = "EV_500_Aggr1km_RefSB_5";
+    public static final String MODIS_CSV_PRODUCT_RHO2130_BAND_NAME = "EV_500_Aggr1km_RefSB_7";
+
     public static final int MEASURE_HERITAGE_1 = 1;
     public static final int MEASURE_HERITAGE_2 = 2;
     public static final int MEASURE_HERITAGE_3 = 3;
@@ -41,6 +47,7 @@ public class MetImageConstants {
     public static final int MEASURE_NEW_5 = 12;
     public static final int MEASURE_NEW_6 = 13;
     public static final int MEASURE_NEW_7 = 14;
+    public static final int MEASURE_NEW_8 = 15;
 
     //    #Planck constant [Js]
     public static final double PLANCK_CONSTANT = 6.62606896e-34;

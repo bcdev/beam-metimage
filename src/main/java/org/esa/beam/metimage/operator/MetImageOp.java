@@ -69,7 +69,12 @@ public class MetImageOp extends Operator {
     private Tile longitudeTile;
     private Tile rho600Tile;
     private Tile rho860Tile;
-    private Tile rho1380Tile;
+    private Tile rho645Tile; // refSB1
+    private Tile rho469Tile; // refSB3
+    private Tile rho555Tile; // refSB4
+    private Tile rho1240Tile;
+    private Tile rho1380Tile;  // refSB5
+    private Tile rho2130Tile;  // refSB7
     private Tile bt3700Tile;
     private Tile bt7300Tile;
     private Tile bt8600Tile;
@@ -221,6 +226,12 @@ public class MetImageOp extends Operator {
         if (surfaceTypeBand == null) {
             throw new OperatorException("No cloud cover information available from input product - cannot proceed.");
         }
+        final Band rho469Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO645_BAND_NAME);
+        final Band rho645Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO469_BAND_NAME);
+        final Band rho555Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO555_BAND_NAME);
+        final Band rho1240Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO1240_BAND_NAME);
+        final Band rho2130Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO2130_BAND_NAME);
+
         final Band rho600Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO600_BAND_NAME);
         final Band rho860Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO860_BAND_NAME);
         final Band rho1380Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO1380_BAND_NAME);
@@ -236,6 +247,11 @@ public class MetImageOp extends Operator {
         daytimeTile = getSourceTile(daytimeBand, sampleRect);
         latitudeTile = getSourceTile(latitudeBand, sampleRect);
         longitudeTile = getSourceTile(longitudeBand, sampleRect);
+        rho645Tile = getSourceTile(rho645Band, sampleRect);
+        rho469Tile = getSourceTile(rho469Band, sampleRect);
+        rho555Tile = getSourceTile(rho555Band, sampleRect);
+        rho1240Tile = getSourceTile(rho1240Band, sampleRect);
+        rho2130Tile = getSourceTile(rho2130Band, sampleRect);
         rho600Tile = getSourceTile(rho600Band, sampleRect);
         rho860Tile = getSourceTile(rho860Band, sampleRect);
         rho1380Tile = getSourceTile(rho1380Band, sampleRect);
@@ -459,7 +475,16 @@ public class MetImageOp extends Operator {
                 break;
 
             case MetImageConstants.MEASURE_NEW_1:
-                measure = ModisMeasures.newMeasureR138WaterVapour(rho1380Tile.getSampleDouble(x, y));
+//                measure = ModisMeasures.newMeasureR138WaterVapour(rho1380Tile.getSampleDouble(x, y));
+
+                measure = ModisMeasures.newMeasureRhoSB_3_5_7(rho469Tile.getSampleDouble(x, y),     // test MP
+                                                              rho1240Tile.getSampleDouble(x, y),
+                                                              rho2130Tile.getSampleDouble(x, y));
+
+                measure = ModisMeasures.newMeasureRhoSB_1_3_4(rho645Tile.getSampleDouble(x, y),     // test MP  2
+                                                              rho469Tile.getSampleDouble(x, y),
+                                                              rho555Tile.getSampleDouble(x, y));
+
                 fillMeasureOutputArray(nCloudArray[0], nNoCloudArray[0], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_NEW_2:
