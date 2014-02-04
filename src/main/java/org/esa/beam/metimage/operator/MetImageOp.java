@@ -76,6 +76,8 @@ public class MetImageOp extends Operator {
     private Tile rho1380Tile;  // refSB5
     private Tile rho2130Tile;  // refSB7
     private Tile bt3700Tile;
+    private Tile bt4050Tile;   // emiss23
+    private Tile bt4515Tile;   // emiss25
     private Tile bt7300Tile;
     private Tile bt8600Tile;
     private Tile bt11000Tile;
@@ -236,6 +238,8 @@ public class MetImageOp extends Operator {
         final Band rho860Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO860_BAND_NAME);
         final Band rho1380Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO1380_BAND_NAME);
         final Band bt3700Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_BT3700_BAND_NAME);
+        final Band bt4050Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_BT4050_BAND_NAME);
+        final Band bt4515Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_BT4515_BAND_NAME);
         final Band bt7300Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_BT7300_BAND_NAME);
         final Band bt8600Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_BT8600_BAND_NAME);
         final Band bt11000Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_BT11000_BAND_NAME);
@@ -256,6 +260,8 @@ public class MetImageOp extends Operator {
         rho860Tile = getSourceTile(rho860Band, sampleRect);
         rho1380Tile = getSourceTile(rho1380Band, sampleRect);
         bt3700Tile = getSourceTile(bt3700Band, sampleRect);
+        bt4050Tile = getSourceTile(bt4050Band, sampleRect);
+        bt4515Tile = getSourceTile(bt4515Band, sampleRect);
         bt7300Tile = getSourceTile(bt7300Band, sampleRect);
         bt8600Tile = getSourceTile(bt8600Band, sampleRect);
         cloudHeightTile = getSourceTile(cloudHeightBand, sampleRect);
@@ -477,13 +483,22 @@ public class MetImageOp extends Operator {
             case MetImageConstants.MEASURE_NEW_1:
 //                measure = ModisMeasures.newMeasureR138WaterVapour(rho1380Tile.getSampleDouble(x, y));
 
-                measure = ModisMeasures.newMeasureRhoSB_3_5_7(rho469Tile.getSampleDouble(x, y),     // test MP
-                                                              rho1240Tile.getSampleDouble(x, y),
-                                                              rho2130Tile.getSampleDouble(x, y));
+//                measure = ModisMeasures.newMeasureRhoSB_3_5_7_add(rho469Tile.getSampleDouble(x, y),     // test MP
+//                                                                  rho1240Tile.getSampleDouble(x, y),
+//                                                                  rho2130Tile.getSampleDouble(x, y));
 
-                measure = ModisMeasures.newMeasureRhoSB_1_3_4(rho645Tile.getSampleDouble(x, y),     // test MP  2
-                                                              rho469Tile.getSampleDouble(x, y),
-                                                              rho555Tile.getSampleDouble(x, y));
+                measure = ModisMeasures.newMeasureRhoSB_3_5_7_log_multiply(rho469Tile.getSampleDouble(x, y),     // test MP
+                                                                           rho1240Tile.getSampleDouble(x, y),
+                                                                           rho2130Tile.getSampleDouble(x, y),
+                                                                           isSampleDay(daytimeTile, x, y));
+
+//                measure = ModisMeasures.newMeasureRhoSB_1_3_4(rho645Tile.getSampleDouble(x, y),     // test MP  2
+//                                                              rho469Tile.getSampleDouble(x, y),
+//                                                              rho555Tile.getSampleDouble(x, y));
+//
+//                measure = ModisMeasures.newMeasureLogEmiss_25_32_23(bt4515Tile.getSampleDouble(x, y),     // test MP  3
+//                                                                    bt12000Tile.getSampleDouble(x, y),
+//                                                                    bt4050Tile.getSampleDouble(x, y));
 
                 fillMeasureOutputArray(nCloudArray[0], nNoCloudArray[0], y, x, measure);
                 break;
@@ -571,6 +586,10 @@ public class MetImageOp extends Operator {
 
     private boolean isSampleNight(Tile daytimeTile, int x, int y) {
         return daytimeTile.getSampleInt(x, y) == 2;
+    }
+
+    private boolean isSampleDay(Tile daytimeTile, int x, int y) {
+        return daytimeTile.getSampleInt(x, y) == 1;
     }
 
     @Override

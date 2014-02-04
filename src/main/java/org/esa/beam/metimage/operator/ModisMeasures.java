@@ -160,10 +160,19 @@ public class ModisMeasures {
     }
 
     // new 1/7 TEST
-    public static double newMeasureRhoSB_3_5_7(double rho469, double rho1240, double rho2130) {      // 469, 1240, 2130
+    public static double newMeasureRhoSB_3_5_7_add(double rho469, double rho1240, double rho2130) {      // 469, 1240, 2130
         if (rho469 > 0.0 && rho1240 > 0.0 && rho469 > rho2130 &&
                 rho469 < 2.0 && rho1240 < 2.0 && rho2130 < 1.0) {
             return rho469 + rho1240 + rho2130;
+        } else {
+            return Double.NaN;
+        }
+    }
+
+    public static double newMeasureRhoSB_3_5_7_log_multiply(double rho469, double rho1240, double rho2130, boolean sampleDay) {      // 469, 1240, 2130
+        if (sampleDay && rho469 > 0.0 && rho1240 > 0.0 && rho469 > rho2130 &&
+                rho469 < 2.0 && rho1240 < 2.0 && rho2130 < 1.0) {
+            return Math.log(rho469 * rho1240 * rho2130);
         } else {
             return Double.NaN;
         }
@@ -177,6 +186,15 @@ public class ModisMeasures {
             return Double.NaN;
         }
     }
+
+    public static double newMeasureLogEmiss_25_32_23(double bt4515, double bt12000, double bt4050) {      // 4515, 12000, 4050
+        if (bt4515 > 0.0 && bt12000 > 0.0 & bt4050 > 0.0) {
+            return -Math.log(bt4515) -Math.log(bt12000) -Math.log(bt4050);
+        } else {
+            return Double.NaN;
+        }
+    }
+
 
 
     public static double convertModisEmissiveRadianceToTemperature(double radiance, int emissiveBandNumber) {

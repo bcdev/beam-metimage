@@ -22,6 +22,8 @@ public class MetImageConstants {
     public static final String MODIS_CSV_PRODUCT_RHO860_BAND_NAME = "EV_1KM_RefSB_16";
     public static final String MODIS_CSV_PRODUCT_RHO1380_BAND_NAME = "EV_1KM_RefSB_26";
     public static final String MODIS_CSV_PRODUCT_BT3700_BAND_NAME = "EV_1KM_Emissive_20";
+    public static final String MODIS_CSV_PRODUCT_BT4050_BAND_NAME = "EV_1KM_Emissive_23";
+    public static final String MODIS_CSV_PRODUCT_BT4515_BAND_NAME = "EV_1KM_Emissive_25";
     public static final String MODIS_CSV_PRODUCT_BT7300_BAND_NAME = "EV_1KM_Emissive_28";
     public static final String MODIS_CSV_PRODUCT_BT8600_BAND_NAME = "EV_1KM_Emissive_29";
     public static final String MODIS_CSV_PRODUCT_BT11000_BAND_NAME = "EV_1KM_Emissive_31";
