@@ -58,6 +58,18 @@ public class MetImageOp extends Operator {
                defaultValue = "20")
     private int numberOfBins;
 
+    @Parameter(valueSet = {"DAY", "NIGHT", "TWILIGHT", "ALL"}, defaultValue = "ALL",
+               description = "The day time characteristics")
+    private String daytime;
+
+    @Parameter(valueSet = {"LAND", "SEA", "ICE", "ALL"}, defaultValue = "ALL",
+               description = "The surface characteristics")
+    private String surface;
+
+    @Parameter(valueSet = {"LOW", "MIDLEVEL", "HIGH", "SEMITRANSPARENT", "ALL"}, defaultValue = "ALL",
+               description = "The cloud characteristics")
+    private String cloudtype;
+
 
     private int width;
     private int height;
@@ -399,7 +411,7 @@ public class MetImageOp extends Operator {
                             measure = getMeasureNew7(bt11000Mean3x3, bt11000Minus3700Mean3x3, rho600Mean3x3, y, x);
                             fillMeasureOutputArray(nCloudArray[6], nNoCloudArray[6], y, x, measure);
                         }
-                        if (!Double.isNaN(measure)) {
+                        if (considerMeasure(measure, x, y)) {
                             if (isSampleCloudy(surfaceTypeTile, x, y)) {
                                 cloudSampleList.add(measure);
                             } else if (isSampleNoCloudy(surfaceTypeTile, x, y)){
@@ -421,7 +433,8 @@ public class MetImageOp extends Operator {
                     // take the center of the measures over 3x3 pixels
                     if ((index + 5) % 9 == 0) {
                         final double measure = getMeasureById(measureId, y, x);
-                        if (!Double.isNaN(measure)) {
+//                        if (!Double.isNaN(measure)) {
+                        if (considerMeasure(measure, x, y)) {
                             if (isSampleCloudy(surfaceTypeTile, x, y)) {
                                 cloudSampleList.add(measure);
                             } else if (isSampleNoCloudy(surfaceTypeTile, x, y)) {
@@ -443,6 +456,35 @@ public class MetImageOp extends Operator {
         sample.setNoCloudSamples(noCloudSampleArray);
 
         return sample;
+    }
+
+    private boolean considerMeasure(double measure, int x, int y) {
+        final boolean isNotNan = !Double.isNaN(measure);
+
+        final boolean daytimeOK = daytime.equals("ALL") ||
+                (daytime.equals("DAY") && isSampleDay(daytimeTile, x, y)) ||
+                (daytime.equals("NIGHT") && isSampleNight(daytimeTile, x, y)) ||
+                (daytime.equals("TWILIGHT") && isSampleTwilight(daytimeTile, x, y));
+
+        final boolean surfaceOK = surface.equals("ALL") ||
+                isSampleCloudy(surfaceTypeTile, x, y) ||  // we have to let these pass
+                (surface.equals("LAND") && isSampleLand(surfaceTypeTile, x, y)) ||
+                (surface.equals("SEA") && isSampleOcean(surfaceTypeTile, x, y)) ||
+                (surface.equals("ICE") && isSampleIce(surfaceTypeTile, x, y));
+
+//        if (surfaceOK) {
+//            System.out.println("x,y = " + x + "," + y);
+//        }
+
+        final boolean cloudtypeOK = cloudtype.equals("ALL") ||
+                !isSampleCloudy(surfaceTypeTile, x, y) ||    // we have to let these pass
+                (cloudtype.equals("LOW") && isSampleLowCloud(cloudHeightTile, x, y)) ||
+                (cloudtype.equals("MIDLEVEL") && isSampleMidlevelCloud(cloudHeightTile, x, y)) ||
+                (cloudtype.equals("HIGH") && isSampleHighCloud(cloudHeightTile, x, y)) ||
+                (cloudtype.equals("SEMITRANSPARENT") && isSampleSemitransparentCloud(surfaceTypeTile, x, y));
+
+
+        return isNotNan && daytimeOK && surfaceOK && cloudtypeOK;
     }
 
     private double getMeasureById(int measureId, int y, int x) {
@@ -481,16 +523,16 @@ public class MetImageOp extends Operator {
                 break;
 
             case MetImageConstants.MEASURE_NEW_1:
-//                measure = ModisMeasures.newMeasureR138WaterVapour(rho1380Tile.getSampleDouble(x, y));
+                measure = ModisMeasures.newMeasureR138WaterVapour(rho1380Tile.getSampleDouble(x, y));
 
 //                measure = ModisMeasures.newMeasureRhoSB_3_5_7_add(rho469Tile.getSampleDouble(x, y),     // test MP
 //                                                                  rho1240Tile.getSampleDouble(x, y),
 //                                                                  rho2130Tile.getSampleDouble(x, y));
 
-                measure = ModisMeasures.newMeasureRhoSB_3_5_7_log_multiply(rho469Tile.getSampleDouble(x, y),     // test MP
-                                                                           rho1240Tile.getSampleDouble(x, y),
-                                                                           rho2130Tile.getSampleDouble(x, y),
-                                                                           isSampleDay(daytimeTile, x, y));
+//                measure = ModisMeasures.newMeasureRhoSB_3_5_7_log_multiply(rho469Tile.getSampleDouble(x, y),     // test MP
+//                                                                           rho1240Tile.getSampleDouble(x, y),
+//                                                                           rho2130Tile.getSampleDouble(x, y),
+//                                                                           isSampleDay(daytimeTile, x, y));
 
 //                measure = ModisMeasures.newMeasureRhoSB_1_3_4(rho645Tile.getSampleDouble(x, y),     // test MP  2
 //                                                              rho469Tile.getSampleDouble(x, y),
@@ -569,28 +611,54 @@ public class MetImageOp extends Operator {
     }
 
     private boolean isSampleCloudy(Tile surfaceTile, int x, int y) {
-        return surfaceTile.getSampleInt(x, y) == 0;
+        return surfaceTile.getSampleInt(x, y) == 0 ||
+                (cloudtype.equals("SEMITRANSPARENT") && isSampleSemitransparentCloud(surfaceTile, x, y));
     }
 
     private boolean isSampleNoCloudy(Tile surfaceTile, int x, int y) {
         return (surfaceTile.getSampleInt(x, y) >= 2 && surfaceTile.getSampleInt(x, y) <= 4);
     }
 
-    private boolean isSampleLand(Tile surfaceTile, int x, int y) {
+    private boolean isSampleOcean(Tile surfaceTile, int x, int y) {
         return surfaceTile.getSampleInt(x, y) == 2 || surfaceTile.getSampleInt(x, y) == 5;
     }
 
-    private boolean isSampleOcean(Tile surfaceTile, int x, int y) {
-        return surfaceTile.getSampleInt(x, y) == 3;
+    private boolean isSampleLand(Tile surfaceTile, int x, int y) {
+        return surfaceTile.getSampleInt(x, y) == 3 || surfaceTile.getSampleInt(x, y) == 6;
+    }
+
+    private boolean isSampleIce(Tile surfaceTile, int x, int y) {
+        return surfaceTile.getSampleInt(x, y) == 4 || surfaceTile.getSampleInt(x, y) == 7;
+    }
+
+    private boolean isSampleDay(Tile daytimeTile, int x, int y) {
+        return daytimeTile.getSampleInt(x, y) == 1;
     }
 
     private boolean isSampleNight(Tile daytimeTile, int x, int y) {
         return daytimeTile.getSampleInt(x, y) == 2;
     }
 
-    private boolean isSampleDay(Tile daytimeTile, int x, int y) {
-        return daytimeTile.getSampleInt(x, y) == 1;
+    private boolean isSampleTwilight(Tile daytimeTile, int x, int y) {
+        return daytimeTile.getSampleInt(x, y) == 3;
     }
+
+    private boolean isSampleLowCloud(Tile cloudHeightTile, int x, int y) {
+        return cloudHeightTile.getSampleInt(x, y) == 1;
+    }
+
+    private boolean isSampleMidlevelCloud(Tile cloudHeightTile, int x, int y) {
+        return cloudHeightTile.getSampleInt(x, y) == 2;
+    }
+
+    private boolean isSampleHighCloud(Tile cloudHeightTile, int x, int y) {
+        return cloudHeightTile.getSampleInt(x, y) == 3;
+    }
+
+    private boolean isSampleSemitransparentCloud(Tile surfaceTile, int x, int y) {
+        return surfaceTile.getSampleInt(x, y) == 1;
+    }
+
 
     @Override
     public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
