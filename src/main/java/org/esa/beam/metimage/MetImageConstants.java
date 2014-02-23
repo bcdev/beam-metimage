@@ -12,7 +12,7 @@ public class MetImageConstants {
 
     public static final int ALPHA = 100;
 
-    public static final String MODIS_CSV_PRODUCT_CLOUD_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
+    public static final String MODIS_CSV_PRODUCT_SURFACETYPE_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
     public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
     public static final String MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME = "CLOUD_HEIGHT_ID";
     public static final String MODIS_CSV_PRODUCT_LATITUDE_BAND_NAME = "Latitude";
@@ -35,6 +35,8 @@ public class MetImageConstants {
     public static final String MODIS_CSV_PRODUCT_RHO1240_BAND_NAME = "EV_500_Aggr1km_RefSB_5";
     public static final String MODIS_CSV_PRODUCT_RHO2130_BAND_NAME = "EV_500_Aggr1km_RefSB_7";
 
+    public static final int NUM_TESTS = 7;
+
     public static final int MEASURE_HERITAGE_1 = 1;
     public static final int MEASURE_HERITAGE_2 = 2;
     public static final int MEASURE_HERITAGE_3 = 3;
@@ -42,6 +44,7 @@ public class MetImageConstants {
     public static final int MEASURE_HERITAGE_5 = 5;
     public static final int MEASURE_HERITAGE_6 = 6;
     public static final int MEASURE_HERITAGE_7 = 7;
+
     public static final int MEASURE_NEW_1 = 8;
     public static final int MEASURE_NEW_2 = 9;
     public static final int MEASURE_NEW_3 = 10;
@@ -49,7 +52,29 @@ public class MetImageConstants {
     public static final int MEASURE_NEW_5 = 12;
     public static final int MEASURE_NEW_6 = 13;
     public static final int MEASURE_NEW_7 = 14;
-    public static final int MEASURE_NEW_8 = 15;
+
+    public static final int[] MEASURE_HERITAGE = {
+            MEASURE_HERITAGE_1,
+            MEASURE_HERITAGE_2,
+            MEASURE_HERITAGE_3,
+            MEASURE_HERITAGE_4,
+            MEASURE_HERITAGE_5,
+            MEASURE_HERITAGE_6,
+            MEASURE_HERITAGE_7
+    };
+    public static final int[] MEASURE_NEW = {
+            MEASURE_NEW_1,
+            MEASURE_NEW_2,
+            MEASURE_NEW_3,
+            MEASURE_NEW_4,
+            MEASURE_NEW_5,
+            MEASURE_NEW_6,
+            MEASURE_NEW_7
+    };
+
+    public static final String[] DAYTIME_FILTER_ID = {"ALL", "DAY", "NIGHT", "TWILIGHT"};
+    public static final String[] SURFACE_FILTER_ID = {"ALL", "LAND", "SEA", "ICE"};
+    public static final String[] CLOUDTYPE_FILTER_ID = {"ALL", "LOW", "MIDLEVEL", "HIGH", "SEMITRANSPARENT"};
 
     //    #Planck constant [Js]
     public static final double PLANCK_CONSTANT = 6.62606896e-34;

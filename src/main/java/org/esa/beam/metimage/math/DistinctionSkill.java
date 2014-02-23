@@ -2,6 +2,9 @@ package org.esa.beam.metimage.math;
 
 import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NonMonotonicSequenceException;
+import org.apache.commons.math3.exception.NumberIsTooSmallException;
 import org.esa.beam.metimage.MetImageConstants;
 import util.MetImageUtils;
 
@@ -78,22 +81,33 @@ public class DistinctionSkill {
 
         final double[] cdfab = getCdfAb(cdfa, cdfb, numA, numB);
 
-        LinearInterpolator interpolator = new LinearInterpolator();
-        final PolynomialSplineFunction fCdfa = interpolator.interpolate(bins, cdfa);
-        final PolynomialSplineFunction fCdfb = interpolator.interpolate(bins, cdfb);
-        final PolynomialSplineFunction fCdfab = interpolator.interpolate(bins, cdfab);
+        try {
+            LinearInterpolator interpolator = new LinearInterpolator();
+            final PolynomialSplineFunction fCdfa = interpolator.interpolate(bins, cdfa);
+            final PolynomialSplineFunction fCdfb = interpolator.interpolate(bins, cdfb);
+            final PolynomialSplineFunction fCdfab = interpolator.interpolate(bins, cdfab);
 
-        double[] quantiles = new double[MetImageConstants.NUM_QUANTILES];
-        double[] distances = new double[MetImageConstants.NUM_QUANTILES];
-        final double increment = (bins[nBins-1] - bins[0])/quantiles.length;
-        for (int i = 0; i < quantiles.length; i++) {
-            quantiles[i] = bins[0] + i*increment;
-            final double fcdfaValue = fCdfa.value(quantiles[i]);
-            final double fcdfbValue = fCdfb.value(quantiles[i]);
-            distances[i] = (fcdfaValue-fcdfbValue) * (fcdfaValue-fcdfbValue);
+            double[] quantiles = new double[MetImageConstants.NUM_QUANTILES];
+            double[] distances = new double[MetImageConstants.NUM_QUANTILES];
+            final double increment = (bins[nBins-1] - bins[0])/quantiles.length;
+            for (int i = 0; i < quantiles.length; i++) {
+                quantiles[i] = bins[0] + i*increment;
+                final double fcdfaValue = fCdfa.value(quantiles[i]);
+                final double fcdfbValue = fCdfb.value(quantiles[i]);
+                distances[i] = (fcdfaValue-fcdfbValue) * (fcdfaValue-fcdfbValue);
+            }
+
+            return 3.0 * trapezIntegration(distances, fCdfab, quantiles);
+        } catch (DimensionMismatchException e) {
+            e.printStackTrace();
+            return Double.NaN;
+        } catch (NumberIsTooSmallException e) {
+            e.printStackTrace();
+            return Double.NaN;
+        } catch (NonMonotonicSequenceException e) {
+            e.printStackTrace();
+            return Double.NaN;
         }
-
-        return 3.0 * trapezIntegration(distances, fCdfab, quantiles);
     }
 
     private static void checkHistogramDimensions(int nPdfa, int nPdfb, int nBins) {
