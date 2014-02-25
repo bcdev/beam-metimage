@@ -11,6 +11,7 @@ public class MetImageConstants {
     public static final int NUM_QUANTILES = 100000;
 
     public static final int ALPHA = 100;
+    public static final int MIN_SAMPLES_PER_HISTOGRAM = 50;
 
     public static final String MODIS_CSV_PRODUCT_SURFACETYPE_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
     public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
@@ -28,6 +29,7 @@ public class MetImageConstants {
     public static final String MODIS_CSV_PRODUCT_BT8600_BAND_NAME = "EV_1KM_Emissive_29";
     public static final String MODIS_CSV_PRODUCT_BT11000_BAND_NAME = "EV_1KM_Emissive_31";
     public static final String MODIS_CSV_PRODUCT_BT12000_BAND_NAME = "EV_1KM_Emissive_32";
+    public static final String MODIS_CSV_PRODUCT_BT13000_BAND_NAME = "EV_1KM_Emissive_33";
 
     public static final String MODIS_CSV_PRODUCT_RHO645_BAND_NAME = "EV_250_Aggr1km_RefSB_1";
     public static final String MODIS_CSV_PRODUCT_RHO469_BAND_NAME = "EV_500_Aggr1km_RefSB_3";
@@ -161,5 +163,6 @@ public class MetImageConstants {
     public static final double UPPER_LIM_BT8600 = 15.0;
     public static final double UPPER_LIM_BT11000 = 15.0;
     public static final double UPPER_LIM_BT12000 = 15.0;
+    public static final double UPPER_LIM_BT13000 = 15.0;
 
 }

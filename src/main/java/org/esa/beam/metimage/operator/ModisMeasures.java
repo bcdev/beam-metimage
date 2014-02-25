@@ -18,6 +18,7 @@ public class ModisMeasures {
     // Emissive.29 (8550nm)
     // Emissive.31 (11030nm)
     // Emissive.32 (12020nm)
+    // Emissive.33 (13200nm)
 
     public ModisMeasures() {
     }
@@ -119,8 +120,14 @@ public class ModisMeasures {
 
     // new 3/7
     // cannot be implemented within this project!!
-    public static double newMeasureCO2() {
-        return Double.NaN;
+    // BUT: compute BT13 - BT11 for a check
+    public static double newMeasureCO2(double bt13000, double bt11000) {
+        if (bt13000 < MetImageConstants.UPPER_LIM_BT13000 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
+            return convertModisEmissiveRadianceToTemperature(bt13000, 32) -
+                    convertModisEmissiveRadianceToTemperature(bt11000, 31);
+        } else {
+            return Double.NaN;
+        }
     }
 
     // new 4/7
@@ -147,7 +154,10 @@ public class ModisMeasures {
     // new 6/7
     public static double newMeasureO2Absorption(int cloudHeightID) {
         // first guess: we don't have anything better than this
-        return MetImageConstants.cloudHeights[cloudHeightID];
+        // RP: does not make sense at all
+        //return MetImageConstants.cloudHeights[cloudHeightID];
+
+        return Double.NaN;
     }
 
     // new 7/7
@@ -189,12 +199,11 @@ public class ModisMeasures {
 
     public static double newMeasureLogEmiss_25_32_23(double bt4515, double bt12000, double bt4050) {      // 4515, 12000, 4050
         if (bt4515 > 0.0 && bt12000 > 0.0 & bt4050 > 0.0) {
-            return -Math.log(bt4515) -Math.log(bt12000) -Math.log(bt4050);
+            return -Math.log(bt4515) - Math.log(bt12000) - Math.log(bt4050);
         } else {
             return Double.NaN;
         }
     }
-
 
 
     public static double convertModisEmissiveRadianceToTemperature(double radiance, int emissiveBandNumber) {
