@@ -19,8 +19,10 @@ public class MetImageConstants {
     public static final String MODIS_CSV_PRODUCT_LATITUDE_BAND_NAME = "Latitude";
     public static final String MODIS_CSV_PRODUCT_LONGITUDE_BAND_NAME = "Longitude";
 
-    public static final String MODIS_CSV_PRODUCT_RHO600_BAND_NAME = "EV_1KM_RefSB_13lo";
-    public static final String MODIS_CSV_PRODUCT_RHO860_BAND_NAME = "EV_1KM_RefSB_16";
+//    public static final String MODIS_CSV_PRODUCT_RHO600_BAND_NAME = "EV_1KM_RefSB_13lo";
+    public static final String MODIS_CSV_PRODUCT_RHO600_BAND_NAME = "EV_250_Aggr1km_RefSB_1";   // RP, 20140226
+//    public static final String MODIS_CSV_PRODUCT_RHO860_BAND_NAME = "EV_1KM_RefSB_16";
+    public static final String MODIS_CSV_PRODUCT_RHO860_BAND_NAME = "EV_250_Aggr1km_RefSB_2";   // RP, 20140226
     public static final String MODIS_CSV_PRODUCT_RHO1380_BAND_NAME = "EV_1KM_RefSB_26";
     public static final String MODIS_CSV_PRODUCT_BT3700_BAND_NAME = "EV_1KM_Emissive_20";
     public static final String MODIS_CSV_PRODUCT_BT4050_BAND_NAME = "EV_1KM_Emissive_23";

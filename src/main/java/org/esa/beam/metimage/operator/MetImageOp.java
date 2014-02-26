@@ -1,6 +1,7 @@
 package org.esa.beam.metimage.operator;
 
 import com.bc.ceres.core.ProgressMonitor;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Min;
 import org.esa.beam.framework.dataio.ProductIO;
@@ -415,44 +416,56 @@ public class MetImageOp extends Operator {
         List<Double> noCloudSampleList = new ArrayList<>();
 
         if (measureId == MetImageConstants.MEASURE_HERITAGE_7 || measureId == MetImageConstants.MEASURE_NEW_7) {
-            double rho600Mean3x3 = 0.0;
-            double bt11000Mean3x3 = 0.0;
-            double bt11000Minus3700Mean3x3 = 0.0;
+//            double rho600Mean3x3 = 0.0;
+//            double bt11000Mean3x3 = 0.0;
+//            double bt12000Minus3700Mean3x3 = 0.0;
             int index = 0;
-            int counter = 0;
+//            int counter = 0;
+            SummaryStatistics rho600Stats = new SummaryStatistics();
+            SummaryStatistics bt11000Stats = new SummaryStatistics();
+            SummaryStatistics bt12000Minus3700Stats = new SummaryStatistics();
             for (int y = sampleRect.y; y < sampleRect.y + sampleRect.height; y++) {
                 for (int x = sampleRect.x; x < sampleRect.x + sampleRect.width; x++) {
                     // take the mean of measures over 3x3 pixels
                     if (measureId == MetImageConstants.MEASURE_HERITAGE_7) {
                         if (bt11000Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT11000) {
-                            bt11000Mean3x3 +=
+                            final double bt11000Value =
                                     ModisMeasures.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31);
-                            counter++;
+                            bt11000Stats.addValue(bt11000Value);
+//                            counter++;
                         }
                     } else {
                         if (rho600Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_RHO600 &&
                                 bt3700Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT3700 &&
                                 bt11000Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT11000) {
-                            rho600Mean3x3 += rho600Tile.getSampleDouble(x, y);
-                            bt11000Mean3x3 +=
+                            final double rho600Value = rho600Tile.getSampleDouble(x, y);
+                            rho600Stats.addValue(rho600Value);
+                            final double bt11000Value =
                                     ModisMeasures.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31);
-                            bt11000Minus3700Mean3x3 +=
-                                    ModisMeasures.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31) -
+                            bt11000Stats.addValue(bt11000Value);
+                            final double bt12000Minus3700Value =
+                                    ModisMeasures.convertModisEmissiveRadianceToTemperature(bt12000Tile.getSampleDouble(x, y), 31) -
                                             ModisMeasures.convertModisEmissiveRadianceToTemperature(bt3700Tile.getSampleDouble(x, y), 20);
-                            counter++;
+                            bt12000Minus3700Stats.addValue(bt12000Minus3700Value);
+//                            counter++;
                         }
                     }
 
                     if ((index + 1) % 9 == 0) {
-                        rho600Mean3x3 /= counter;
-                        bt11000Mean3x3 /= counter;
-                        bt11000Minus3700Mean3x3 /= counter;
+//                        rho600Mean3x3 /= counter;
+//                        bt11000Mean3x3 /= counter;
+//                        bt12000Minus3700Mean3x3 /= counter;
+
                         double measure;
                         if (measureId == MetImageConstants.MEASURE_HERITAGE_7) {
-                            measure = getMeasureHeritage7(bt11000Mean3x3);
+//                            measure = getMeasureHeritage7(bt11000Mean3x3);
+                            measure = getMeasureHeritage7(bt11000Stats.getStandardDeviation());
                             fillMeasureOutputArray(hCloudArray[6], hNoCloudArray[6], y, x, measure);
                         } else {
-                            measure = getMeasureNew7(bt11000Mean3x3, bt11000Minus3700Mean3x3, rho600Mean3x3, y, x);
+//                            measure = getMeasureNew7(bt11000Mean3x3, bt12000Minus3700Mean3x3, rho600Mean3x3, y, x);
+                            measure = getMeasureNew7(bt11000Stats.getStandardDeviation(),
+                                                     bt12000Minus3700Stats.getStandardDeviation(),
+                                                     rho600Stats.getStandardDeviation(), y, x);
                             fillMeasureOutputArray(nCloudArray[6], nNoCloudArray[6], y, x, measure);
                         }
                         if (considerMeasure(measure, x, y)) {
@@ -462,10 +475,13 @@ public class MetImageOp extends Operator {
                                 noCloudSampleList.add(measure);
                             }
                         }
-                        rho600Mean3x3 = 0.0;
-                        bt11000Mean3x3 = 0.0;
-                        bt11000Minus3700Mean3x3 = 0.0;
-                        counter = 0;
+//                        rho600Mean3x3 = 0.0;
+//                        bt11000Mean3x3 = 0.0;
+//                        bt12000Minus3700Mean3x3 = 0.0;
+                        rho600Stats = new SummaryStatistics();
+                        bt11000Stats = new SummaryStatistics();
+                        bt12000Minus3700Stats = new SummaryStatistics();
+//                        counter = 0;
                     }
                     index++;
                 }
@@ -586,10 +602,11 @@ public class MetImageOp extends Operator {
                 fillMeasureOutputArray(nCloudArray[0], nNoCloudArray[0], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_NEW_2:
-                measure = ModisMeasures.newMeasureBT11(bt7300Tile.getSampleDouble(x, y),
+                measure = ModisMeasures.newMeasureBT11(bt3700Tile.getSampleDouble(x, y),
+                                                       bt7300Tile.getSampleDouble(x, y),
                         bt8600Tile.getSampleDouble(x, y),
                         bt11000Tile.getSampleDouble(x, y),
-                        isSampleLand(surfaceTypeTile, x, y));
+                        isSampleLand(surfaceTypeTile, x, y), isSampleNight(daytimeTile, x, y));
                 fillMeasureOutputArray(nCloudArray[1], nNoCloudArray[1], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_NEW_3:
@@ -599,7 +616,7 @@ public class MetImageOp extends Operator {
                 break;
             case MetImageConstants.MEASURE_NEW_4:
                 measure = ModisMeasures.newMeasureBT37minusBT87Deserts(bt3700Tile.getSampleDouble(x, y),
-                        bt8600Tile.getSampleDouble(x, y));
+                        bt8600Tile.getSampleDouble(x, y), isSampleNight(daytimeTile, x, y));
                 fillMeasureOutputArray(nCloudArray[3], nNoCloudArray[3], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_NEW_5:
@@ -631,11 +648,11 @@ public class MetImageOp extends Operator {
         return ModisMeasures.heritageMeasureUniformity(bt11000Sample3x3);
     }
 
-    private double getMeasureNew7(double bt11000Sample3x3, double diffBt11Bt3700Sample3x3, double rho600Sample3x3,
+    private double getMeasureNew7(double bt11000Sigma3x3, double diffBt12Bt3700Sigma3x3, double rho600Sigma3x3,
                                   int y, int x) {
-        return ModisMeasures.newMeasureUniformityTwoChannels(bt11000Sample3x3,
-                diffBt11Bt3700Sample3x3,
-                rho600Sample3x3,
+        return ModisMeasures.newMeasureUniformityTwoChannels(bt11000Sigma3x3,
+                diffBt12Bt3700Sigma3x3,
+                rho600Sigma3x3,
                 isSampleNight(daytimeTile, x, y));
     }
 

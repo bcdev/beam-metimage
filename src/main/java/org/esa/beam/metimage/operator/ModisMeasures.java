@@ -10,8 +10,8 @@ import org.esa.beam.metimage.MetImageConstants;
 public class ModisMeasures {
 
     // quantities:
-    // RefSB.13 (667nm)
-    // RefSB.16 (869.5nm)
+    // RefSB.13 (667nm)         --> shall be EV_250_Aggr1km_RefSB_1  (RP, 20140226)
+    // RefSB.16 (869.5nm)       --> shall be EV_250_Aggr1km_RefSB_2  (RP, 20140226)
     // RefSB.26 (1375nm)
     // Emissive.20 (3750nm)
     // Emissive.28 (7325nm)
@@ -100,7 +100,7 @@ public class ModisMeasures {
     }
 
     // new 2/7
-    public static double newMeasureBT11(double bt7300, double bt8600, double bt11000, boolean isLand) {
+    public static double newMeasureBT11(double bt3700, double bt7300, double bt8600, double bt11000, boolean isLand, boolean isNight) {
         if (isLand) {
             if (bt7300 < MetImageConstants.UPPER_LIM_BT7300 && bt8600 < MetImageConstants.UPPER_LIM_BT8600) {
                 return convertModisEmissiveRadianceToTemperature(bt7300, 28) -
@@ -116,6 +116,13 @@ public class ModisMeasures {
                 return Double.NaN;
             }
         }
+
+        // TEST:
+//        if (isNight && bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
+//            return convertModisEmissiveRadianceToTemperature(bt3700, 20) - convertModisEmissiveRadianceToTemperature(bt11000, 31);
+//        } else {
+//            return Double.NaN;
+//        }
     }
 
     // new 3/7
@@ -131,13 +138,20 @@ public class ModisMeasures {
     }
 
     // new 4/7
-    public static double newMeasureBT37minusBT87Deserts(double bt3700, double bt8600) {
+    public static double newMeasureBT37minusBT87Deserts(double bt3700, double bt8600, boolean isNight) {
         if (bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt8600 < MetImageConstants.UPPER_LIM_BT8600) {
             return convertModisEmissiveRadianceToTemperature(bt3700, 20) -
                     convertModisEmissiveRadianceToTemperature(bt8600, 29);
         } else {
             return Double.NaN;
         }
+
+        // TEST:
+//        if (isNight && bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt8600 < MetImageConstants.UPPER_LIM_BT8600) {
+//            return convertModisEmissiveRadianceToTemperature(bt3700, 20) - convertModisEmissiveRadianceToTemperature(bt8600, 29);
+//        } else {
+//            return Double.NaN;
+//        }
     }
 
     // new 5/7
@@ -161,11 +175,14 @@ public class ModisMeasures {
     }
 
     // new 7/7
-    public static double newMeasureUniformityTwoChannels(double bt11Sample3x3, double diffBt11Bt37Sample3x3, double rho600, boolean isNight) {
+    public static double newMeasureUniformityTwoChannels(double bt11Sigma3x3, double diffBt12Bt37Sigma3x3,
+                                                         double rho600Sigma3x3, boolean isNight) {
         if (isNight) {
-            return combine(bt11Sample3x3, diffBt11Bt37Sample3x3);
+//            return combine(bt11Sigma3x3, diffBt12Bt37Sigma3x3);
+            return diffBt12Bt37Sigma3x3; // RP, 20140226
         } else {
-            return combine(bt11Sample3x3, rho600);
+//            return combine(bt11Sigma3x3,/ rho600Sigma3x3);
+            return rho600Sigma3x3;   // RP, 20140226
         }
     }
 
