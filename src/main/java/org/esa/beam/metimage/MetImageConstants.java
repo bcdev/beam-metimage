@@ -80,7 +80,7 @@ public class MetImageConstants {
     public static final String[] SURFACE_FILTER_ID = {"ALL", "LAND", "SEA", "ICE"};
     public static final String[] CLOUDTYPE_FILTER_ID = {"ALL", "LOW", "MIDLEVEL", "HIGH", "SEMITRANSPARENT"};
 
-//    public static final String[] DAYTIME_FILTER_ID = {"NIGHT"};
+//    public static final String[] DAYTIME_FILTER_ID = {"ALL", "DAY", "NIGHT"};
 //    public static final String[] SURFACE_FILTER_ID = {"ALL"};
 //    public static final String[] CLOUDTYPE_FILTER_ID = {"ALL"};
 

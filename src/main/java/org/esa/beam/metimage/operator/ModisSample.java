@@ -1,8 +1,5 @@
 package org.esa.beam.metimage.operator;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Container holding a MODIS sample with an ID and arrays with 'cloud' and 'noCloud' samples
  *
@@ -10,16 +7,24 @@ import java.util.List;
  */
 public class ModisSample {
     private int measureID;
+    private String measureName;
     private double[] cloudSamples;
     private double[] noCloudSamples;
-    private List<Double> cloudSampleList;
-    private List<Double> noCloudSampleList;
 
 
-    public ModisSample(int measureID) {
+    public ModisSample(int measureID) throws IllegalArgumentException {
         this.measureID = measureID;
-        cloudSampleList = new ArrayList<Double>();
-        noCloudSampleList = new ArrayList<Double>();
+        setMeasureName();
+    }
+
+    private void setMeasureName() throws IllegalArgumentException {
+        if (measureID > 0 && measureID <= 7) {
+            measureName = "H" + measureID;
+        } else if (measureID > 7 && measureID <= 14) {
+            measureName = "N" + (measureID - 7);
+        } else {
+            throw new IllegalArgumentException("measureId: " + measureID);
+        }
     }
 
     public int getMeasureID() {
@@ -42,11 +47,7 @@ public class ModisSample {
         this.noCloudSamples = noCloudSamples;
     }
 
-    public List<Double> getCloudSampleList() {
-        return cloudSampleList;
-    }
-
-    public List<Double> getNoCloudSampleList() {
-        return noCloudSampleList;
+    public String getMeasureName() {
+        return measureName;
     }
 }
