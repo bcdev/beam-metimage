@@ -1,6 +1,5 @@
 package org.esa.beam.metimage.util;
 
-import org.esa.beam.metimage.operator.ModisMeasures;
 import org.junit.Before;
 import org.junit.Test;
 import util.MetImageUtils;
@@ -48,7 +47,7 @@ public class MetImageUtilsTest {
     @Test
     public void testGetAsDoubles() throws Exception {
         float[] fArr = new float[]{1.0f, 2.0f};
-        final double[] dArr = MetImageUtils.getAsDoubles(fArr);
+        final double[] dArr = MetImageUtils.getAsPrimitiveDoubles(fArr);
         assertNotNull(dArr);
         assertEquals("[D", dArr.getClass().getName());
         assertEquals(1.0, dArr[0], 1.E-6);

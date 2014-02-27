@@ -3,9 +3,6 @@ package org.esa.beam.metimage.math;
 import com.bc.ceres.core.ProgressMonitor;
 import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.exception.NonMonotonicSequenceException;
-import org.apache.commons.math3.exception.NumberIsTooSmallException;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Min;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
@@ -71,8 +68,8 @@ public class MetImageHistogram extends Histogram {
         equalSpacedBinsHisto.computeDensityFunctions();
 
         LinearInterpolator interpolator = new LinearInterpolator();
-        final PolynomialSplineFunction equalBinsHistoPsf = interpolator.interpolate(MetImageUtils.getAsDoubles(equalSpacedBinsHisto.getCdf()),
-                                                                                    MetImageUtils.getAsDoubles(equalSpacedBinsHisto.getEqualBinBorders()));
+        final PolynomialSplineFunction equalBinsHistoPsf = interpolator.interpolate(MetImageUtils.getAsPrimitiveDoubles(equalSpacedBinsHisto.getCdf()),
+                                                                                    MetImageUtils.getAsPrimitiveDoubles(equalSpacedBinsHisto.getEqualBinBorders()));
 
         double[] equalSpacedBins = new double[nBins];
         double[] unequalSpacedBins = new double[nBins];

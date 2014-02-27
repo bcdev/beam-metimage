@@ -28,7 +28,7 @@ public class MetImageUtils {
     }
 
 
-    public static double[] getAsDoubles(float[] fArr) {
+    public static double[] getAsPrimitiveDoubles(float[] fArr) {
         double[] dArr = new double[fArr.length];
         for (int i = 0; i < dArr.length; i++) {
             dArr[i] = (double) fArr[i];
@@ -44,4 +44,19 @@ public class MetImageUtils {
         return dPrimitiveArr;
     }
 
+    public static Double[] getAsDoubles(float[] fArr) {
+        Double[] dArr = new Double[fArr.length];
+        for (int i = 0; i < fArr.length; i++) {
+            dArr[i] = new Double(fArr[i]);
+        }
+        return dArr;
+    }
+
+    public static Double[] getAsDoubles(double[] srcArr) {
+        Double[] dArr = new Double[srcArr.length];
+        for (int i = 0; i < srcArr.length; i++) {
+            dArr[i] = new Double(srcArr[i]);
+        }
+        return dArr;
+    }
 }

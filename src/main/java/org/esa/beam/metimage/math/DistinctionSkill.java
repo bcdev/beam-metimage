@@ -18,11 +18,11 @@ public class DistinctionSkill {
     public static double computeDistinctionSkillFromCramerMisesAndersonMetric(MetImageHistogram noCloudHisto,
                                                                               MetImageHistogram cloudHisto,
                                                                               int numA, int numB) {
-        final double[] pdfA = MetImageUtils.getAsDoubles(noCloudHisto.getPdf());
-        final double[] pdfB = MetImageUtils.getAsDoubles(cloudHisto.getPdf());
-        final double[] cdfA = MetImageUtils.getAsDoubles(noCloudHisto.getCdf());
-        final double[] cdfB = MetImageUtils.getAsDoubles(cloudHisto.getCdf());
-        final double[] bins = MetImageUtils.getAsDoubles(noCloudHisto.getEqualBinBorders());
+        final double[] pdfA = MetImageUtils.getAsPrimitiveDoubles(noCloudHisto.getPdf());
+        final double[] pdfB = MetImageUtils.getAsPrimitiveDoubles(cloudHisto.getPdf());
+        final double[] cdfA = MetImageUtils.getAsPrimitiveDoubles(noCloudHisto.getCdf());
+        final double[] cdfB = MetImageUtils.getAsPrimitiveDoubles(cloudHisto.getCdf());
+        final double[] bins = MetImageUtils.getAsPrimitiveDoubles(noCloudHisto.getEqualBinBorders());
         return computeDistinctionSkillFromCramerMisesAndersonMetric(pdfA, pdfB, cdfA, cdfB, bins, numA, numB);
     }
 
