@@ -80,6 +80,11 @@ public class MetImageConstants {
     public static final String[] SURFACE_FILTER_ID = {"ALL", "LAND", "SEA", "ICE"};
     public static final String[] CLOUDTYPE_FILTER_ID = {"ALL", "LOW", "MIDLEVEL", "HIGH", "SEMITRANSPARENT"};
 
+//    public static final String[] DAYTIME_FILTER_ID = {"NIGHT"};
+//    public static final String[] SURFACE_FILTER_ID = {"ALL"};
+//    public static final String[] CLOUDTYPE_FILTER_ID = {"ALL"};
+
+
     //    #Planck constant [Js]
     public static final double PLANCK_CONSTANT = 6.62606896e-34;
     //    #c in vacuum [m/s]
@@ -147,17 +152,17 @@ public class MetImageConstants {
             14193.7   // band 36
     };
 
-    public static final double[] cloudHeights = new double[]{
-            0.0,    //    0	  UNKNOWN
-            3000.0,    //    1    low (<3km)
-            6000.0,    //    2    middle (3-6km)
-            9000.0     //    3    high (>6km)
-    };
+//    public static final double[] cloudHeights = new double[]{
+//            0.0,    //    0	  UNKNOWN
+//            3000.0,    //    1    low (<3km)
+//            6000.0,    //    2    middle (3-6km)
+//            9000.0     //    3    high (>6km)
+//    };
 
-    public static final double TSKIN_DEFAULT = 288.0;
-
-    public static final double UPPER_LIM_RHO600 = 0.125;
-    public static final double UPPER_LIM_RHO860 = 0.175;
+//    public static final double UPPER_LIM_RHO600 = 0.125;
+    public static final double UPPER_LIM_RHO600 = 2.0;
+//    public static final double UPPER_LIM_RHO860 = 0.175;
+    public static final double UPPER_LIM_RHO860 = 1.5;
     public static final double UPPER_LIM_RHO1380 = 1.0;
 
     public static final double UPPER_LIM_BT3700 = 2.0;

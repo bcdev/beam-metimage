@@ -33,9 +33,9 @@ import java.util.List;
  * @author Marco Zuehlke, Olaf Danne
  */
 @OperatorMetadata(alias = "beam.metimage", version = "1.0-SNAPSHOT",
-        authors = "Rene Preusker, Olaf Danne, Marco Zuehlke",
-        copyright = "(c) 2013/14 FU Berlin, Brockmann Consult",
-        description = "Operator for MetImage Cloud processing.")
+                  authors = "Rene Preusker, Olaf Danne, Marco Zuehlke",
+                  copyright = "(c) 2013/14 FU Berlin, Brockmann Consult",
+                  description = "Operator for MetImage Cloud processing.")
 public class MetImageOp extends Operator {
     public static final String VERSION = "1.0-SNAPSHOT";
 
@@ -53,13 +53,13 @@ public class MetImageOp extends Operator {
     File outputAsciiFile;
 
     @Parameter(description = "If set, 'cloud' and 'no cloud' histograms will be equalized",
-            label = "Equalize histograms",
-            defaultValue = "false")
+               label = "Equalize histograms",
+               defaultValue = "false")
     private boolean equalizeHistograms;
 
     @Parameter(description = "If set, use GETASSE30 DEM, otherwise get altitudes from product TPGs",
-            label = "Use GETASSE30 DEM",
-            defaultValue = "20")
+               label = "Use GETASSE30 DEM",
+               defaultValue = "20")
     private int numberOfBins;
 
     private String daytime;
@@ -110,11 +110,10 @@ public class MetImageOp extends Operator {
         try {
             targetProduct = createTargetProduct();
         } catch (IOException e) {
-            e.printStackTrace();   // todo
+            throw new OperatorException("Cannot create target product: " + e.getMessage());
         }
 
         getSourceTiles();
-
 
         PrintStream csvOutputStream;
         try {
@@ -145,7 +144,7 @@ public class MetImageOp extends Operator {
                     cloudtype = MetImageConstants.CLOUDTYPE_FILTER_ID[kk];
 
                     System.out.println("daytime, surface, cloudtype = " +
-                            daytime + ", " + nonCloudySurface + ", " + cloudtype);
+                                               daytime + ", " + nonCloudySurface + ", " + cloudtype);
 
                     hCloudArray = new double[MetImageConstants.NUM_TESTS][width][height];
                     hNoCloudArray = new double[MetImageConstants.NUM_TESTS][width][height];
@@ -209,17 +208,46 @@ public class MetImageOp extends Operator {
         csvOutputStream.close();
     }
 
-    private Product createTargetProduct() throws IOException {
-        final int width = sourceProduct.getSceneRasterWidth();
-        final int height = sourceProduct.getSceneRasterHeight();
+    @Override
+    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
 
-        Product metimageProduct = new Product("METIMAGE",
-                "METIMAGE",
-                width,
-                height);
+        final Rectangle rectangle = targetTile.getRectangle();
+        for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
+            for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
+
+                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME)) {
+                    targetTile.setSample(x, y, daytimeTile.getSampleInt(x, y));
+                }
+                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_SURFACETYPE_BAND_NAME)) {
+                    targetTile.setSample(x, y, surfaceTypeTile.getSampleInt(x, y));
+                }
+                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME)) {
+                    targetTile.setSample(x, y, cloudHeightTile.getSampleInt(x, y));
+                }
+
+                for (int i = 1; i <= 7; i++) {
+                    if (targetBand.getName().equals("H" + i + "_cloud")) {
+                        targetTile.setSample(x, y, hCloudArray[i - 1][x][y]);
+                    }
+                    if (targetBand.getName().equals("H" + i + "_nocloud")) {
+                        targetTile.setSample(x, y, hNoCloudArray[i - 1][x][y]);
+                    }
+                    if (targetBand.getName().equals("N" + i + "_cloud")) {
+                        targetTile.setSample(x, y, nCloudArray[i - 1][x][y]);
+                    }
+                    if (targetBand.getName().equals("N" + i + "_nocloud")) {
+                        targetTile.setSample(x, y, nNoCloudArray[i - 1][x][y]);
+                    }
+                }
+            }
+        }
+
+    }
+
+    private Product createTargetProduct() throws IOException {
+        Product metimageProduct = new Product("METIMAGE", "METIMAGE", width, height);
 
         ProductUtils.copyGeoCoding(sourceProduct, metimageProduct);
-
         addTargetBands(metimageProduct);
 
         ProductWriter productWriter = ProductIO.getProductWriter("BEAM-DIMAP");
@@ -318,13 +346,17 @@ public class MetImageOp extends Operator {
         bt12000Tile = getSourceTile(bt12000Band, sampleRect);
         bt13000Tile = getSourceTile(bt13000Band, sampleRect);
 
-        //        String tskinBandName = "skt_time" + findTskinTimeIndex(timestring);    // todo
-        String tskinBandName = "skt_time730";     // test!
+        String tskinBandName = "skt_time" + findTskinTimeIndex();
         final Band tskinBand = tskinProduct.getBand(tskinBandName);
         final int tskinWidth = tskinProduct.getSceneRasterWidth();
         final int tskinHeight = tskinProduct.getSceneRasterHeight();
         tskinTile = getSourceTile(tskinBand, new Rectangle(tskinWidth, tskinHeight));
 
+    }
+
+    private String findTskinTimeIndex() {
+        // todo: define reasonable method to find correct day/night skin temperatures
+        return "730";
     }
 
     private double getDistinctionSkill(ModisSample modisSample) {
@@ -336,13 +368,13 @@ public class MetImageOp extends Operator {
 
         if (numCloud == 0 || numNoCloud == 0) {
             System.out.println("MeasureID '" + modisSample.getMeasureID() +
-                    "' : One or both cloud/noCloud sample arrays empty - cannot compute distinction skill.");
+                                       "' : One or both cloud/noCloud sample arrays empty - cannot compute distinction skill.");
             return Double.NaN;
         }
         if (numCloud < MetImageConstants.MIN_SAMPLES_PER_HISTOGRAM ||
                 numNoCloud < MetImageConstants.MIN_SAMPLES_PER_HISTOGRAM) {
             System.out.println("MeasureID '" + modisSample.getMeasureID() +
-                    "' : One or both cloud/noCloud sample arrays too small - cannot compute distinction skill.");
+                                       "' : One or both cloud/noCloud sample arrays too small - cannot compute distinction skill.");
             return Double.NaN;
         }
 
@@ -378,14 +410,14 @@ public class MetImageOp extends Operator {
                     noCloudHisto.computeDensityFunctions();
                 } catch (Exception e) {
                     System.out.println("Cannot perform equalization for measure ID '" + modisSample.getMeasureID() +
-                            "': " + e.getMessage());
+                                               "': " + e.getMessage());
                     System.out.println(" --> compute distinction skill without equalization.");
                     cloudHisto = MetImageHistogram.createAggregatedHistogram(cloudSamples, numberOfBins, min, max);
                     noCloudHisto = MetImageHistogram.createAggregatedHistogram(noCloudSamples, numberOfBins, min, max);
                 }
             } else {
                 System.out.println("Cannot perform equalization for measure ID '" + modisSample.getMeasureID() +
-                        "' (no valid 'optimal bins' found) - compute distinction skill without equalization.");
+                                           "' (no valid 'optimal bins' found) - compute distinction skill without equalization.");
                 cloudHisto = MetImageHistogram.createAggregatedHistogram(cloudSamples, numberOfBins, min, max);
                 noCloudHisto = MetImageHistogram.createAggregatedHistogram(noCloudSamples, numberOfBins, min, max);
             }
@@ -394,9 +426,9 @@ public class MetImageOp extends Operator {
             noCloudHisto = MetImageHistogram.createAggregatedHistogram(noCloudSamples, numberOfBins, min, max);
         }
         distSkill = DistinctionSkill.computeDistinctionSkillFromCramerMisesAndersonMetric(noCloudHisto,
-                cloudHisto,
-                numNoCloud,
-                numCloud);
+                                                                                          cloudHisto,
+                                                                                          numNoCloud,
+                                                                                          numCloud);
 
         return distSkill;
     }
@@ -416,53 +448,51 @@ public class MetImageOp extends Operator {
         List<Double> noCloudSampleList = new ArrayList<>();
 
         if (measureId == MetImageConstants.MEASURE_HERITAGE_7 || measureId == MetImageConstants.MEASURE_NEW_7) {
-//            double rho600Mean3x3 = 0.0;
-//            double bt11000Mean3x3 = 0.0;
-//            double bt12000Minus3700Mean3x3 = 0.0;
             int index = 0;
-//            int counter = 0;
             SummaryStatistics rho600Stats = new SummaryStatistics();
             SummaryStatistics bt11000Stats = new SummaryStatistics();
             SummaryStatistics bt12000Minus3700Stats = new SummaryStatistics();
             for (int y = sampleRect.y; y < sampleRect.y + sampleRect.height; y++) {
                 for (int x = sampleRect.x; x < sampleRect.x + sampleRect.width; x++) {
-                    // take the mean of measures over 3x3 pixels
+                    // take the standard deviation of measures over 3x3 pixels
                     if (measureId == MetImageConstants.MEASURE_HERITAGE_7) {
                         if (bt11000Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT11000) {
                             final double bt11000Value =
                                     ModisMeasures.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31);
                             bt11000Stats.addValue(bt11000Value);
-//                            counter++;
                         }
                     } else {
-                        if (rho600Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_RHO600 &&
+                        final boolean rho600Valid =
+                                isSampleNight(daytimeTile, x, y) || rho600Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_RHO600;
+                        if (rho600Valid &&
                                 bt3700Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT3700 &&
                                 bt11000Tile.getSampleDouble(x, y) < MetImageConstants.UPPER_LIM_BT11000) {
                             final double rho600Value = rho600Tile.getSampleDouble(x, y);
-                            rho600Stats.addValue(rho600Value);
+                            if (!Double.isNaN(rho600Value)) {
+                                rho600Stats.addValue(rho600Value);
+                            }
                             final double bt11000Value =
                                     ModisMeasures.convertModisEmissiveRadianceToTemperature(bt11000Tile.getSampleDouble(x, y), 31);
-                            bt11000Stats.addValue(bt11000Value);
-                            final double bt12000Minus3700Value =
-                                    ModisMeasures.convertModisEmissiveRadianceToTemperature(bt12000Tile.getSampleDouble(x, y), 31) -
-                                            ModisMeasures.convertModisEmissiveRadianceToTemperature(bt3700Tile.getSampleDouble(x, y), 20);
-                            bt12000Minus3700Stats.addValue(bt12000Minus3700Value);
-//                            counter++;
+                            if (!Double.isNaN(bt11000Value)) {
+                                bt11000Stats.addValue(bt11000Value);
+                            }
+
+                            if (!Double.isNaN(bt12000Tile.getSampleDouble(x, y)) && !Double.isNaN(bt3700Tile.getSampleDouble(x, y))) {
+                                final double bt12000Value =
+                                        ModisMeasures.convertModisEmissiveRadianceToTemperature(bt12000Tile.getSampleDouble(x, y), 32);
+                                final double bt3700Value =
+                                        ModisMeasures.convertModisEmissiveRadianceToTemperature(bt3700Tile.getSampleDouble(x, y), 20);
+                                bt12000Minus3700Stats.addValue(bt12000Value - bt3700Value);
+                            }
                         }
                     }
 
                     if ((index + 1) % 9 == 0) {
-//                        rho600Mean3x3 /= counter;
-//                        bt11000Mean3x3 /= counter;
-//                        bt12000Minus3700Mean3x3 /= counter;
-
                         double measure;
                         if (measureId == MetImageConstants.MEASURE_HERITAGE_7) {
-//                            measure = getMeasureHeritage7(bt11000Mean3x3);
                             measure = getMeasureHeritage7(bt11000Stats.getStandardDeviation());
                             fillMeasureOutputArray(hCloudArray[6], hNoCloudArray[6], y, x, measure);
                         } else {
-//                            measure = getMeasureNew7(bt11000Mean3x3, bt12000Minus3700Mean3x3, rho600Mean3x3, y, x);
                             measure = getMeasureNew7(bt11000Stats.getStandardDeviation(),
                                                      bt12000Minus3700Stats.getStandardDeviation(),
                                                      rho600Stats.getStandardDeviation(), y, x);
@@ -475,13 +505,10 @@ public class MetImageOp extends Operator {
                                 noCloudSampleList.add(measure);
                             }
                         }
-//                        rho600Mean3x3 = 0.0;
-//                        bt11000Mean3x3 = 0.0;
-//                        bt12000Minus3700Mean3x3 = 0.0;
+
                         rho600Stats = new SummaryStatistics();
                         bt11000Stats = new SummaryStatistics();
                         bt12000Minus3700Stats = new SummaryStatistics();
-//                        counter = 0;
                     }
                     index++;
                 }
@@ -493,7 +520,6 @@ public class MetImageOp extends Operator {
                     // take the center of the measures over 3x3 pixels
                     if ((index + 5) % 9 == 0) {
                         final double measure = getMeasureById(measureId, y, x);
-//                        if (!Double.isNaN(measure)) {
                         if (considerMeasure(measure, x, y)) {
                             if (isSampleCloud(surfaceTypeTile, x, y)) {
                                 cloudSampleList.add(measure);
@@ -526,7 +552,6 @@ public class MetImageOp extends Operator {
                 (daytime.equals("NIGHT") && isSampleNight(daytimeTile, x, y)) ||
                 (daytime.equals("TWILIGHT") && isSampleTwilight(daytimeTile, x, y));
 
-//        final boolean surfaceOK = surface.equals("ALL");
         final boolean surfaceOK = nonCloudySurface.equals("ALL") ||
                 isSampleCloud(surfaceTypeTile, x, y) ||  // we have to let these pass
                 (nonCloudySurface.equals("LAND") && isSampleLand(surfaceTypeTile, x, y)) ||
@@ -553,29 +578,29 @@ public class MetImageOp extends Operator {
                 break;
             case MetImageConstants.MEASURE_HERITAGE_2:
                 measure = ModisMeasures.heritageMeasureSplitWindow(bt11000Tile.getSampleDouble(x, y),
-                        bt12000Tile.getSampleDouble(x, y));
+                                                                   bt12000Tile.getSampleDouble(x, y));
                 fillMeasureOutputArray(hCloudArray[1], hNoCloudArray[1], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_HERITAGE_3:
                 measure = ModisMeasures.heritageMeasureNegativeBT37minusBT11Night(bt3700Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y),
-                        isSampleNight(daytimeTile, x, y));
+                                                                                  bt11000Tile.getSampleDouble(x, y),
+                                                                                  isSampleNight(daytimeTile, x, y));
                 fillMeasureOutputArray(hCloudArray[2], hNoCloudArray[2], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_HERITAGE_4:
                 measure = ModisMeasures.heritageMeasurePositiveBT37minusBT11NightMixedScene(bt3700Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y),
-                        isSampleNight(daytimeTile, x, y));
+                                                                                            bt12000Tile.getSampleDouble(x, y),
+                                                                                            isSampleNight(daytimeTile, x, y));
                 fillMeasureOutputArray(hCloudArray[3], hNoCloudArray[3], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_HERITAGE_5:
                 measure = ModisMeasures.heritageMeasureSolarBrightnessThresholdsOcean(rho860Tile.getSampleDouble(x, y),
-                        isSampleLand(surfaceTypeTile, x, y));
+                                                                                      isSampleLand(surfaceTypeTile, x, y));
                 fillMeasureOutputArray(hCloudArray[4], hNoCloudArray[4], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_HERITAGE_6:
                 measure = ModisMeasures.heritageMeasureSolarBrightnessThresholdsLand(rho600Tile.getSampleDouble(x, y),
-                        isSampleOcean(surfaceTypeTile, x, y));
+                                                                                     isSampleOcean(surfaceTypeTile, x, y));
                 fillMeasureOutputArray(hCloudArray[5], hNoCloudArray[5], y, x, measure);
                 break;
 
@@ -604,25 +629,25 @@ public class MetImageOp extends Operator {
             case MetImageConstants.MEASURE_NEW_2:
                 measure = ModisMeasures.newMeasureBT11(bt3700Tile.getSampleDouble(x, y),
                                                        bt7300Tile.getSampleDouble(x, y),
-                        bt8600Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y),
-                        isSampleLand(surfaceTypeTile, x, y), isSampleNight(daytimeTile, x, y));
+                                                       bt8600Tile.getSampleDouble(x, y),
+                                                       bt11000Tile.getSampleDouble(x, y),
+                                                       isSampleLand(surfaceTypeTile, x, y), isSampleNight(daytimeTile, x, y));
                 fillMeasureOutputArray(nCloudArray[1], nNoCloudArray[1], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_NEW_3:
                 measure = ModisMeasures.newMeasureCO2(bt13000Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y));
+                                                      bt11000Tile.getSampleDouble(x, y));
                 fillMeasureOutputArray(nCloudArray[2], nNoCloudArray[2], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_NEW_4:
                 measure = ModisMeasures.newMeasureBT37minusBT87Deserts(bt3700Tile.getSampleDouble(x, y),
-                        bt8600Tile.getSampleDouble(x, y), isSampleNight(daytimeTile, x, y));
+                                                                       bt8600Tile.getSampleDouble(x, y), isSampleNight(daytimeTile, x, y));
                 fillMeasureOutputArray(nCloudArray[3], nNoCloudArray[3], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_NEW_5:
                 measure = ModisMeasures.newMeasurePositiveBT37minusBT11Day06Glint(bt3700Tile.getSampleDouble(x, y),
-                        bt11000Tile.getSampleDouble(x, y),
-                        rho600Tile.getSampleDouble(x, y));
+                                                                                  bt11000Tile.getSampleDouble(x, y),
+                                                                                  rho600Tile.getSampleDouble(x, y));
                 fillMeasureOutputArray(nCloudArray[4], nNoCloudArray[4], y, x, measure);
                 break;
             case MetImageConstants.MEASURE_NEW_6:
@@ -651,9 +676,9 @@ public class MetImageOp extends Operator {
     private double getMeasureNew7(double bt11000Sigma3x3, double diffBt12Bt3700Sigma3x3, double rho600Sigma3x3,
                                   int y, int x) {
         return ModisMeasures.newMeasureUniformityTwoChannels(bt11000Sigma3x3,
-                diffBt12Bt3700Sigma3x3,
-                rho600Sigma3x3,
-                isSampleNight(daytimeTile, x, y));
+                                                             diffBt12Bt3700Sigma3x3,
+                                                             rho600Sigma3x3,
+                                                             isSampleNight(daytimeTile, x, y));
     }
 
     private double getTskin(int x, int y) {
@@ -665,8 +690,7 @@ public class MetImageOp extends Operator {
         px = Math.min(px, tskinProduct.getSceneRasterWidth() - 1);
         int py = (int) pixelPos.getY();
         py = Math.min(py, tskinProduct.getSceneRasterHeight() - 1);
-        final double tskin = tskinTile.getSampleDouble(px, py);
-        return tskin;
+        return tskinTile.getSampleDouble(px, py);
     }
 
     private boolean isSampleCloud(Tile surfaceTile, int x, int y) {
@@ -715,42 +739,6 @@ public class MetImageOp extends Operator {
 
     private boolean isSampleHighCloud(Tile cloudHeightTile, int x, int y) {
         return cloudHeightTile.getSampleInt(x, y) == 3;
-    }
-
-    @Override
-    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-
-        final Rectangle rectangle = targetTile.getRectangle();
-        for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
-            for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
-
-                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME)) {
-                    targetTile.setSample(x, y, daytimeTile.getSampleInt(x, y));
-                }
-                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_SURFACETYPE_BAND_NAME)) {
-                    targetTile.setSample(x, y, surfaceTypeTile.getSampleInt(x, y));
-                }
-                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME)) {
-                    targetTile.setSample(x, y, cloudHeightTile.getSampleInt(x, y));
-                }
-
-                for (int i = 1; i <= 7; i++) {
-                    if (targetBand.getName().equals("H" + i + "_cloud")) {
-                        targetTile.setSample(x, y, hCloudArray[i - 1][x][y]);
-                    }
-                    if (targetBand.getName().equals("H" + i + "_nocloud")) {
-                        targetTile.setSample(x, y, hNoCloudArray[i - 1][x][y]);
-                    }
-                    if (targetBand.getName().equals("N" + i + "_cloud")) {
-                        targetTile.setSample(x, y, nCloudArray[i - 1][x][y]);
-                    }
-                    if (targetBand.getName().equals("N" + i + "_nocloud")) {
-                        targetTile.setSample(x, y, nNoCloudArray[i - 1][x][y]);
-                    }
-                }
-            }
-        }
-
     }
 
     public static class Spi extends OperatorSpi {

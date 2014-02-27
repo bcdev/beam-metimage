@@ -48,7 +48,9 @@ public class ModisMeasures {
 
     // heritage 3/7
     public static double heritageMeasureNegativeBT37minusBT11Night(double bt3700, double bt11000, boolean isNight) {
-        if (isNight && bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
+//        if (isNight && bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
+        // RP, 20140227: remove 'night' restriction
+        if (bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt11000 < MetImageConstants.UPPER_LIM_BT11000) {
             return convertModisEmissiveRadianceToTemperature(bt3700, 20) -
                     convertModisEmissiveRadianceToTemperature(bt11000, 31);
         } else {
@@ -58,8 +60,15 @@ public class ModisMeasures {
 
     // heritage 4/7
     // same as 3/7, but use as 'broken cloud' criterion
-    public static double heritageMeasurePositiveBT37minusBT11NightMixedScene(double bt3700, double bt11000, boolean isNight) {
-        return heritageMeasureNegativeBT37minusBT11Night(bt3700, bt11000, isNight);
+    public static double heritageMeasurePositiveBT37minusBT11NightMixedScene(double bt3700, double bt12000, boolean isNight) {
+//        return heritageMeasureNegativeBT37minusBT11Night(bt3700, bt11000, isNight);
+        // RP, 20140227: remove 'night' restriction
+        if (bt3700 < MetImageConstants.UPPER_LIM_BT3700 && bt12000 < MetImageConstants.UPPER_LIM_BT12000) {
+            return convertModisEmissiveRadianceToTemperature(bt3700, 20) -
+                    convertModisEmissiveRadianceToTemperature(bt12000, 32);
+        } else {
+            return Double.NaN;
+        }
     }
 
     // heritage 5/7
@@ -74,6 +83,7 @@ public class ModisMeasures {
     // heritage 6/7
     public static double heritageMeasureSolarBrightnessThresholdsLand(double rho600, boolean isOcean) {
         if (isOcean || rho600 >= MetImageConstants.UPPER_LIM_RHO600) {
+//        if (isOcean) {
             return Double.NaN;
         } else {
             return rho600;
