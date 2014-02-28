@@ -30,6 +30,8 @@
             <scope>runtime</scope>
             <includes>
                 <include>*:beam-metimage*</include>
+                <include>*:json*</include>
+                <include>*:commons-math3*</include>
             </includes>
         </dependencySet>
     </dependencySets>

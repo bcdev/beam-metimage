@@ -13,6 +13,9 @@ public class MetImageConstants {
     public static final int ALPHA = 100;
     public static final int MIN_SAMPLES_PER_HISTOGRAM = 50;
 
+    public static final String TSKIN_DEFAULT_FILE_NAME = "2007_tskin_730.nc";
+    public static final String TSKIN_DEFAULT_BAND_NAME = "skt_time730";
+
     public static final String MODIS_CSV_PRODUCT_SURFACETYPE_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
     public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
     public static final String MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME = "CLOUD_HEIGHT_ID";

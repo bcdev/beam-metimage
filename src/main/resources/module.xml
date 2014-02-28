@@ -33,7 +33,7 @@
     <extension point="beam-ui:actions">
         <action>
             <id>metImage</id>
-            <class>org.esa.beam.ui.MetImageAction</class>
+            <class>org.esa.beam.metimage.ui.MetImageAction</class>
             <text>MetImage Cloud (MODIS)...</text>
             <shortDescr>MetImage Cloud (MODIS)</shortDescr>
             <longDescr>MetImage Cloud (MODIS).</longDescr>
