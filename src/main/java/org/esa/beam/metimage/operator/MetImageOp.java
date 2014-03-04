@@ -79,6 +79,7 @@ public class MetImageOp extends Operator {
     private int height;
 
     private Tile surfaceTypeTile;
+    private Tile glintTile;
     private Tile daytimeTile;
     private Tile cloudHeightTile;
     private Tile latitudeTile;
@@ -89,6 +90,7 @@ public class MetImageOp extends Operator {
     private Tile rho469Tile; // refSB3
     private Tile rho555Tile; // refSB4
     private Tile rho1240Tile;
+    private Tile rho1640Tile;
     private Tile rho1380Tile;  // refSB5
     private Tile rho2130Tile;  // refSB7
     private Tile bt3700Tile;
@@ -232,6 +234,44 @@ public class MetImageOp extends Operator {
                 if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME)) {
                     targetTile.setSample(x, y, cloudHeightTile.getSampleInt(x, y));
                 }
+                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_GLINT_BAND_NAME)) {
+                    targetTile.setSample(x, y, glintTile.getSampleInt(x, y));
+                }
+                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_SNOW_BAND_NAME)) {
+                    final int isSnow = (surfaceTypeTile.getSampleInt(x, y) == 4 ||
+                            surfaceTypeTile.getSampleInt(x, y) == 7) ? 1 : 0;
+                    targetTile.setSample(x, y, isSnow);
+                }
+                if (targetBand.getName().equals(MetImageConstants.MODIS_CSV_PRODUCT_NDSI_BAND_NAME)) {
+                    // NDSI = (b4-b6)/(b4 + b6)   (b4=0.55 µm (RefSB.4), b6=1.64µm (RefSB.6))
+                    final double b4 = rho555Tile.getSampleDouble(x, y);
+                    final double b6 = rho1640Tile.getSampleDouble(x, y);
+                    double ndsi;
+                    if (b4 > 0.0 && b4 < 2.0 && b6 > 0.0 && b6 < 2.0) {
+                        ndsi = (b4 - b6) / (b4 + b6);
+                    } else {
+                        ndsi = Double.NaN;
+                    }
+                    targetTile.setSample(x, y, ndsi);
+                }
+
+//                if (targetBand.getName().equals("b4")) {
+//                    final double b4 = rho555Tile.getSampleDouble(x, y);
+//                    if (b4 > 0.0) {
+//                        targetTile.setSample(x, y, b4);
+//                    } else {
+//                        targetTile.setSample(x, y, Double.NaN);
+//                    }
+//                }
+//                if (targetBand.getName().equals("b6")) {
+//                    final double b6 = rho1640Tile.getSampleDouble(x, y);
+//                    if (b6 > 0.0) {
+//                        targetTile.setSample(x, y, b6);
+//                    } else {
+//                        targetTile.setSample(x, y, Double.NaN);
+//                    }
+//                }
+
 
                 for (int i = 1; i <= 7; i++) {
                     if (targetBand.getName().equals("H" + i + "_cloud")) {
@@ -267,19 +307,45 @@ public class MetImageOp extends Operator {
     private void addTargetBands(Product product) {
 
         Band daytimeBand = new Band(MetImageConstants.MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME, ProductData.TYPE_INT32, width, height);
-        daytimeBand.setNoDataValue(Double.NaN);
+        daytimeBand.setNoDataValue(-1);
         daytimeBand.setNoDataValueUsed(true);
         product.addBand(daytimeBand);
 
         Band surfaceBand = new Band(MetImageConstants.MODIS_CSV_PRODUCT_SURFACETYPE_BAND_NAME, ProductData.TYPE_INT32, width, height);
-        surfaceBand.setNoDataValue(Double.NaN);
+        surfaceBand.setNoDataValue(-1);
         surfaceBand.setNoDataValueUsed(true);
         product.addBand(surfaceBand);
 
         Band cloudtypeBand = new Band(MetImageConstants.MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME, ProductData.TYPE_INT32, width, height);
-        cloudtypeBand.setNoDataValue(Double.NaN);
+        cloudtypeBand.setNoDataValue(-1);
         cloudtypeBand.setNoDataValueUsed(true);
         product.addBand(cloudtypeBand);
+
+        Band glintBand = new Band(MetImageConstants.MODIS_CSV_PRODUCT_GLINT_BAND_NAME, ProductData.TYPE_INT32, width, height);
+        glintBand.setNoDataValue(-1);
+        glintBand.setNoDataValueUsed(true);
+        product.addBand(glintBand);
+
+        Band snowBand = new Band(MetImageConstants.MODIS_CSV_PRODUCT_SNOW_BAND_NAME, ProductData.TYPE_INT32, width, height);
+        snowBand.setNoDataValue(-1);
+        snowBand.setNoDataValueUsed(true);
+        product.addBand(snowBand);
+
+        Band ndsiBand = new Band(MetImageConstants.MODIS_CSV_PRODUCT_NDSI_BAND_NAME, ProductData.TYPE_FLOAT64, width, height);
+        ndsiBand.setNoDataValue(Double.NaN);
+        ndsiBand.setNoDataValueUsed(true);
+        product.addBand(ndsiBand);
+
+//        Band b4Band = new Band("b4", ProductData.TYPE_FLOAT64, width, height);
+//        b4Band.setNoDataValue(Double.NaN);
+//        b4Band.setNoDataValueUsed(true);
+//        product.addBand(b4Band);
+//
+//        Band b6Band = new Band("b6", ProductData.TYPE_FLOAT64, width, height);
+//        b6Band.setNoDataValue(Double.NaN);
+//        b6Band.setNoDataValueUsed(true);
+//        product.addBand(b6Band);
+
 
         for (int i = 1; i <= MetImageConstants.NUM_TESTS; i++) {
             Band hCloudBand = new Band("H" + i + "_cloud", ProductData.TYPE_FLOAT64, width, height);
@@ -308,6 +374,7 @@ public class MetImageOp extends Operator {
         final Band cloudHeightBand = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME);
         final Band latitudeBand = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_LATITUDE_BAND_NAME);
         final Band longitudeBand = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_LONGITUDE_BAND_NAME);
+        final Band glintBand = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_GLINT_BAND_NAME);
         final Band surfaceTypeBand = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_SURFACETYPE_BAND_NAME);
         if (surfaceTypeBand == null) {
             throw new OperatorException("No cloud cover information available from input product - cannot proceed.");
@@ -316,6 +383,7 @@ public class MetImageOp extends Operator {
         final Band rho645Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO469_BAND_NAME);
         final Band rho555Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO555_BAND_NAME);
         final Band rho1240Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO1240_BAND_NAME);
+        final Band rho1640Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO1640_BAND_NAME);
         final Band rho2130Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO2130_BAND_NAME);
 
         final Band rho600Band = sourceProduct.getBand(MetImageConstants.MODIS_CSV_PRODUCT_RHO600_BAND_NAME);
@@ -333,6 +401,7 @@ public class MetImageOp extends Operator {
         sampleRect = new Rectangle(width, height);
 
         surfaceTypeTile = getSourceTile(surfaceTypeBand, sampleRect);
+        glintTile = getSourceTile(glintBand, sampleRect);
         daytimeTile = getSourceTile(daytimeBand, sampleRect);
         latitudeTile = getSourceTile(latitudeBand, sampleRect);
         longitudeTile = getSourceTile(longitudeBand, sampleRect);
@@ -340,6 +409,7 @@ public class MetImageOp extends Operator {
         rho469Tile = getSourceTile(rho469Band, sampleRect);
         rho555Tile = getSourceTile(rho555Band, sampleRect);
         rho1240Tile = getSourceTile(rho1240Band, sampleRect);
+        rho1640Tile = getSourceTile(rho1640Band, sampleRect);
         rho2130Tile = getSourceTile(rho2130Band, sampleRect);
         rho600Tile = getSourceTile(rho600Band, sampleRect);
         rho860Tile = getSourceTile(rho860Band, sampleRect);
@@ -472,8 +542,8 @@ public class MetImageOp extends Operator {
             throw new OperatorException("Found invalid measureId " + measureId + " - cannot continue.");
         }
 
-        List<Double> cloudSampleList = new ArrayList<>();
-        List<Double> noCloudSampleList = new ArrayList<>();
+        List<Double> cloudSampleList = new ArrayList<Double>();
+        List<Double> noCloudSampleList = new ArrayList<Double>();
 
         if (measureId == MetImageConstants.MEASURE_HERITAGE_7 || measureId == MetImageConstants.MEASURE_NEW_7) {
             int index = 0;

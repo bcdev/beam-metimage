@@ -17,8 +17,11 @@ public class MetImageConstants {
     public static final String TSKIN_DEFAULT_BAND_NAME = "skt_time730";
 
     public static final String MODIS_CSV_PRODUCT_SURFACETYPE_BAND_NAME = "PIXEL_SURFACE_TYPE_ID";
+    public static final String MODIS_CSV_PRODUCT_GLINT_BAND_NAME = "GLINT_ID";
+    public static final String MODIS_CSV_PRODUCT_SNOW_BAND_NAME = "SNOW_ID";
     public static final String MODIS_CSV_PRODUCT_DAYTIME_BAND_NAME = "DAY_TIME_ID";
     public static final String MODIS_CSV_PRODUCT_CLOUDHEIGHT_BAND_NAME = "CLOUD_HEIGHT_ID";
+    public static final String MODIS_CSV_PRODUCT_NDSI_BAND_NAME = "NDSI";
     public static final String MODIS_CSV_PRODUCT_LATITUDE_BAND_NAME = "Latitude";
     public static final String MODIS_CSV_PRODUCT_LONGITUDE_BAND_NAME = "Longitude";
 
@@ -40,6 +43,7 @@ public class MetImageConstants {
     public static final String MODIS_CSV_PRODUCT_RHO469_BAND_NAME = "EV_500_Aggr1km_RefSB_3";
     public static final String MODIS_CSV_PRODUCT_RHO555_BAND_NAME = "EV_500_Aggr1km_RefSB_4";
     public static final String MODIS_CSV_PRODUCT_RHO1240_BAND_NAME = "EV_500_Aggr1km_RefSB_5";
+    public static final String MODIS_CSV_PRODUCT_RHO1640_BAND_NAME = "EV_500_Aggr1km_RefSB_6";
     public static final String MODIS_CSV_PRODUCT_RHO2130_BAND_NAME = "EV_500_Aggr1km_RefSB_7";
 
     public static final int NUM_TESTS = 7;
